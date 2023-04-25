@@ -1,13 +1,17 @@
-package websocket
+package binance
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+)
+
+var (
+	// WebsocketTimeout is an interval for sending ping/pong messages if WebsocketKeepalive is enabled
+	WebsocketTimeout = time.Second * 60
+	// WebsocketKeepalive enables sending ping/pong messages to check the connection stability
+	WebsocketKeepalive = false
 )
 
 // WsHandler handle raw websocket message
@@ -114,14 +118,4 @@ func keepAlive(c *websocket.Conn, timeout time.Duration) {
 			}
 		}
 	}()
-}
-
-func signature(src, secret string) string {
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(src))
-	return hex.EncodeToString(mac.Sum(nil))
-}
-
-func currentTimestamp() int64 {
-	return int64(time.Nanosecond) * time.Now().UnixNano() / int64(time.Millisecond)
 }

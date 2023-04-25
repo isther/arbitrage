@@ -4,29 +4,48 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/isther/arbitrage/utils"
 	"gopkg.in/yaml.v2"
 )
 
+func Load(filename string) {
+	// Load config
+	loadConfigFile(filename)
+
+	if Config.UseProxy {
+		// Set env
+		os.Setenv("HTTP_PROXY", Config.Proxy)
+		os.Setenv("HTTPS_PROXY", Config.Proxy)
+	}
+}
+
 var (
 	Config            *ServerConfig
-	configFileContent = `apiKey: ""
-secretKey: ""
+	configFileContent = `useProxy: false
+proxy: ""
+binanceApiKey: ""
+binanceSecretKey: ""
+mexcApiKey: ""
+mexcSecretKey: ""
 `
 )
 
 // ServerConfig defines the config of the server
 type ServerConfig struct {
-	Proxy     string `json:"proxy" yaml:"proxy"`
-	ApiKey    string `json:"apiKey" yaml:"apiKey"`
-	SecretKey string `json:"secretKey" yaml:"secretKey"`
+	UseProxy         bool   `json:"useProxy" yaml:"useProxy"`
+	Proxy            string `json:"proxy" yaml:"proxy"`
+	BinanceApiKey    string `json:"binanceApiKey" yaml:"binanceApiKey"`
+	BinanceSecretKey string `json:"binanceSecretKey" yaml:"binanceSecretKey"`
+	MexcApiKey       string `json:"mexcApiKey" yaml:"mexcApiKey"`
+	MexcSecretKey    string `json:"mexcSecretKey" yaml:"mexcSecretKey"`
 }
 
-func LoadConfig(filename string) error {
+func loadConfigFile(filename string) error {
 	if filename == "" {
-		return errors.New("use -c to specify configuration file")
+		return errors.New("Config filename is empty")
 	}
 
 	if !utils.PathExists(filename) {

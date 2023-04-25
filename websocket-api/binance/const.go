@@ -1,4 +1,4 @@
-package websocket
+package binance
 
 type WsApiMethod string
 

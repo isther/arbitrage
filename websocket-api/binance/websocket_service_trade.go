@@ -1,4 +1,4 @@
-package websocket
+package binance
 
 import (
 	"fmt"

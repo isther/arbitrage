@@ -1,4 +1,4 @@
-package websocket
+package binance
 
 import (
 	"log"
@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	config.LoadConfig("config.yaml")
+	config.Load("config.yaml")
 
 	requestCh, responseCh, doneC, stopC = WebsocketApiServiceManager.StartWsApi(
 		func(msg []byte) {
@@ -46,8 +46,8 @@ func init() {
 
 func TestWsApiMethod(t *testing.T) {
 	var (
-		apiKey    = config.Config.ApiKey
-		secretKey = config.Config.SecretKey
+		apiKey    = config.Config.BinanceApiKey
+		secretKey = config.Config.BinanceSecretKey
 		w         sync.WaitGroup
 	)
 

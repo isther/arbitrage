@@ -1,6 +1,9 @@
-package websocket
+package binance
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 	"time"
@@ -12,11 +15,6 @@ const (
 )
 
 var (
-	// WebsocketTimeout is an interval for sending ping/pong messages if WebsocketKeepalive is enabled
-	WebsocketTimeout = time.Second * 60
-	// WebsocketKeepalive enables sending ping/pong messages to check the connection stability
-	WebsocketKeepalive = false
-
 	UseTestnet = false
 
 	TimeOffset int64 = 0
@@ -100,6 +98,7 @@ func NewWebsocketServiceManager() *WebsocketServiceManager {
 }
 
 func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler ErrHandler) (chan *WsApiRequest, chan *WsApiEvent, chan struct{}, chan struct{}) {
+	log.Println("Start websocket api service.")
 	var (
 		requestCh  = make(chan *WsApiRequest)
 		responseCh = make(chan *WsApiEvent)
@@ -158,4 +157,14 @@ func (w *WebsocketServiceManager) ParseWsApiEvent(result []byte) (*WsApiEvent, W
 
 	err := wsApiEvent.parseEvent(method)
 	return wsApiEvent, method, err
+}
+
+func signature(src, secret string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(src))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func currentTimestamp() int64 {
+	return int64(time.Nanosecond) * time.Now().UnixNano() / int64(time.Millisecond)
 }
