@@ -160,6 +160,10 @@ func (t *Task) Trade() {
 	mexcSymbolAskPrice, _ := decimal.NewFromString(mexcEvent.Data.AskPrice)
 	binanceSymbolBidPrice, _ := decimal.NewFromString(binanceEvent.BestBidPrice)
 	if t.judgeRatio(true, binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice) {
+		var (
+			doneBinanceCh = make(chan struct{})
+			doneMexcCh    = make(chan struct{})
+		)
 		// 币安把BTC卖出为TUSD、抹茶把USDT买入为BTC；
 		stableSymbolBidQty, _ := decimal.NewFromString(stableEvent.BestBidQty)   // TUSDUSDT
 		mexcSymbolAskQty, _ := decimal.NewFromString(mexcEvent.Data.AskQty)      // BTCUSDT
@@ -172,6 +176,32 @@ func (t *Task) Trade() {
 		// Quantity
 		aQty := decimal.Min(stabldToAQty, binanceToAQty, mexcToAQty, decimal.NewFromFloat(11.0))
 		aQty = decimal.Max(aQty, decimal.NewFromFloat(11.0))
+
+		// Trade binance
+		go func() {
+			requestCh <- t.getOrderBinanceTrade(
+				t.symbolPairs.BinanceSymbol,
+				binance.SideTypeSell,
+				aQty.Div(binanceSymbolBidPrice).String(),
+			)
+
+			doneBinanceCh <- struct{}{}
+		}()
+
+		// Trade mexc
+		go func() {
+			res := t.getOrderMexcTade(
+				t.symbolPairs.MexcSymbol,
+				string(mexc.SideTypeBuy),
+				aQty.Mul(stableSymbolBidPrice).Div(mexcSymbolAskPrice).String(),
+			)
+
+			log.Println("mexc trade", res)
+			doneMexcCh <- struct{}{}
+		}()
+
+		<-doneBinanceCh
+		<-doneMexcCh
 	}
 }
 
