@@ -20,28 +20,38 @@ var (
 )
 
 func init() {
-	requestCh, responseCh, doneC, stopC = WebsocketApiServiceManager.StartWsApi(
-		func(msg []byte) {
-			wsApiEvent, method, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
-			if err != nil {
-				log.Println("[ERROR] Failed to parse wsApiEvent:", err)
-				return
-			}
 
-			switch method {
-			case binance.Ping:
-			case binance.ServerTime:
-			case binance.ExchangeInfo:
-			case binance.AccountStatus:
-			case binance.OrderTrade:
-			}
+	go func() {
+		var (
+			restartCh = make(chan struct{})
+		)
+		for {
+			requestCh, responseCh, doneC, stopC = WebsocketApiServiceManager.StartWsApi(
+				func(msg []byte) {
+					wsApiEvent, method, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
+					if err != nil {
+						log.Println("[ERROR] Failed to parse wsApiEvent:", err)
+						return
+					}
 
-			responseCh <- wsApiEvent
-		},
-		func(err error) {
-			panic(err)
-		},
-	)
+					switch method {
+					case binance.Ping:
+					case binance.ServerTime:
+					case binance.ExchangeInfo:
+					case binance.AccountStatus:
+					case binance.OrderTrade:
+					}
+
+					responseCh <- wsApiEvent
+				},
+				func(err error) {
+					restartCh <- struct{}{}
+					// panic(err)
+				},
+			)
+			<-restartCh
+		}
+	}()
 
 	go func() {
 		for {

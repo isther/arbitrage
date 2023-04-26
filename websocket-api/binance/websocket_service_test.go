@@ -20,28 +20,37 @@ var (
 func init() {
 	config.Load("config.yaml")
 
-	requestCh, responseCh, doneC, stopC = WebsocketApiServiceManager.StartWsApi(
-		func(msg []byte) {
-			wsApiEvent, method, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
-			if err != nil {
-				log.Println("[ERROR] Failed to parse wsApiEvent:", err)
-				return
-			}
+	go func() {
+		var (
+			restartCh = make(chan struct{})
+		)
+		for {
+			requestCh, responseCh, doneC, stopC = WebsocketApiServiceManager.StartWsApi(
+				func(msg []byte) {
+					wsApiEvent, method, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
+					if err != nil {
+						log.Println("[ERROR] Failed to parse wsApiEvent:", err)
+						return
+					}
 
-			switch method {
-			case Ping:
-			case ServerTime:
-			case ExchangeInfo:
-			case AccountStatus:
-			case OrderTrade:
-			}
+					switch method {
+					case Ping:
+					case ServerTime:
+					case ExchangeInfo:
+					case AccountStatus:
+					case OrderTrade:
+					}
 
-			responseCh <- wsApiEvent
-		},
-		func(err error) {
-			panic(err)
-		},
-	)
+					responseCh <- wsApiEvent
+				},
+				func(err error) {
+					restartCh <- struct{}{}
+					// panic(err)
+				},
+			)
+			<-restartCh
+		}
+	}()
 }
 
 func TestWsApiMethod(t *testing.T) {
