@@ -23,9 +23,9 @@ func main() {
 		config.Config.MexcApiKey,
 		config.Config.MexcSecretKey,
 		symbolPair,
-		0.00007,
+		0.00001,
 		0.00015,
-	)
+	).Run()
 
 	binancemexc.ArbitrageManagerInstance.StartWsBookTicker()
 }
