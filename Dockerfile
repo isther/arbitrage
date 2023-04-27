@@ -11,11 +11,16 @@ COPY . .
 
 RUN go build -o cmd bin/cmd/main.go
 
-FROM scratch as runner
+FROM ubuntu:18.04 as runner
 
 COPY --from=builder /build/cmd /
 COPY --from=builder /build/config.yaml /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install -y build-essential curl npm
+RUN npm install n -g
+RUN n lts
 
 EXPOSE 8080
 
