@@ -2,6 +2,7 @@ package binancemexc
 
 import (
 	"log"
+	"os"
 	"sync"
 
 	binancesdk "github.com/adshao/go-binance/v2"
@@ -154,6 +155,7 @@ func (t *Task) Trade() {
 
 		<-doneBinanceCh
 		<-doneMexcCh
+		os.Exit(0)
 	}
 	// （tusd/usdt区的买1价）减去（btc/usdt区卖1价除以btc/tusd区买1价）大于万0.7 小于万1.5
 	stableSymbolBidPrice, _ := decimal.NewFromString(stableEvent.BestBidPrice)
@@ -202,6 +204,7 @@ func (t *Task) Trade() {
 
 		<-doneBinanceCh
 		<-doneMexcCh
+		os.Exit(0)
 	}
 }
 
@@ -219,15 +222,15 @@ func (t *Task) judgeRatio(reverse bool, taPrice, tbPrice, stableSymbolPrice deci
 					tbPrice,
 				),
 			)
-		if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
-			log.Println(
-				"[Mode2]",
-				"TUSD/USDT: ", stableSymbolPrice,
-				"BTC/TUSD: ", taPrice,
-				"BTC/USDT: ", tbPrice,
-				"Ratio:", ratio,
-			)
-		}
+			// if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
+		log.Println(
+			"[Mode2]",
+			"TUSD/USDT: ", stableSymbolPrice,
+			"BTC/TUSD: ", taPrice,
+			"BTC/USDT: ", tbPrice,
+			"Ratio:", ratio,
+		)
+		// }
 	} else {
 		ratio = stableSymbolPrice.
 			Sub(
@@ -236,15 +239,15 @@ func (t *Task) judgeRatio(reverse bool, taPrice, tbPrice, stableSymbolPrice deci
 				),
 			)
 
-		if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
-			log.Println(
-				"[Mode1]",
-				"TUSD/USDT: ", stableSymbolPrice,
-				"BTC/TUSD: ", taPrice,
-				"BTC/USDT: ", tbPrice,
-				"Ratio:", ratio,
-			)
-		}
+			// if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
+		log.Println(
+			"[Mode1]",
+			"TUSD/USDT: ", stableSymbolPrice,
+			"BTC/TUSD: ", taPrice,
+			"BTC/USDT: ", tbPrice,
+			"Ratio:", ratio,
+		)
+		// }
 	}
 
 	return 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0
