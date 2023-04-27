@@ -11,8 +11,6 @@ var (
 	ArbitrageManagerInstance *ArbitrageManager
 	// L                        sync.RWMutex
 
-	WebsocketApiServiceManager = binance.NewWebsocketServiceManager()
-
 	requestCh  = make(chan *binance.WsApiRequest)
 	responseCh = make(chan *binance.WsApiEvent)
 	doneC      chan struct{}
@@ -20,7 +18,7 @@ var (
 )
 
 func init() {
-
+	WebsocketApiServiceManager := binance.NewWebsocketServiceManager()
 	go func() {
 		var (
 			restartCh = make(chan struct{})
