@@ -289,5 +289,5 @@ func (t *Task) getOrderMexcTade(symbol, side, qty string) interface{} {
 	options["timeInForce"] = string(mexc.TimeInForceTypeGTC)
 	options["quantity"] = qty
 
-	return spot.NewOrderTest(&symbol, &side, &orderType, options)
+	return spot.NewOrder(&symbol, &side, &orderType, options)
 }

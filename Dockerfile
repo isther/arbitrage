@@ -11,7 +11,7 @@ COPY . .
 
 RUN go build -o cmd bin/cmd/main.go
 
-FROM ubuntu:18.04 as runner
+FROM ubuntu:latest as runner
 
 COPY --from=builder /build/cmd /
 COPY --from=builder /build/config.yaml /
