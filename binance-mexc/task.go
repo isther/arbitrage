@@ -132,11 +132,11 @@ func (t *Task) Trade() {
 
 		// Trade binance
 		go func() {
-			requestCh <- t.getOrderBinanceTrade(
+			ArbitrageManagerInstance.websocketApiServiceManager.Send(t.getOrderBinanceTrade(
 				t.symbolPairs.BinanceSymbol,
 				binance.SideTypeBuy,
 				aQty.Div(binanceSymbolAskPrice).String(),
-			)
+			))
 
 			doneBinanceCh <- struct{}{}
 		}()
@@ -184,11 +184,11 @@ func (t *Task) Trade() {
 
 		// Trade binance
 		go func() {
-			requestCh <- t.getOrderBinanceTrade(
+			ArbitrageManagerInstance.websocketApiServiceManager.Send(t.getOrderBinanceTrade(
 				t.symbolPairs.BinanceSymbol,
 				binance.SideTypeSell,
 				aQty.Div(binanceSymbolBidPrice).String(),
-			)
+			))
 
 			doneBinanceCh <- struct{}{}
 		}()

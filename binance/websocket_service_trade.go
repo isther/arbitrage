@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 type ORDER_PARME string
@@ -158,6 +159,7 @@ func (w WsApiOrderTradeParams) NewOrderRespType(newOrderRespType NewOrderRespTyp
 }
 
 func (w WsApiOrderTradeParams) Signature(secretKey string) WsApiOrderTradeParams {
+	w.correction()
 	w.Timestamp(currentTimestamp() - TimeOffset)
 
 	params := url.Values{}
@@ -167,4 +169,21 @@ func (w WsApiOrderTradeParams) Signature(secretKey string) WsApiOrderTradeParams
 
 	w[PARAM_SIGNATURE] = signature(params.Encode(), secretKey)
 	return w
+}
+
+func (w WsApiOrderTradeParams) correction() {
+	// For BTCUSDT
+	price, exist := w[PARAM_PRICE] // 0.01000000 8
+	if exist {
+		priceDecimal, _ := decimal.NewFromString(price.(string))
+		priceDecimal = priceDecimal.Truncate(2).Truncate(8)
+		w[PARAM_PRICE] = priceDecimal.String()
+	}
+
+	quantity, exist := w[PARAM_QTY] // 0.00001000 8
+	if exist {
+		quantityDecimal, _ := decimal.NewFromString(quantity.(string))
+		quantityDecimal = quantityDecimal.Truncate(5).Truncate(8)
+		w[PARAM_QTY] = quantityDecimal.String()
+	}
 }

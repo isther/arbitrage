@@ -15,7 +15,9 @@ func TestArbitrageTask(t *testing.T) {
 	}
 	ArbitrageManagerInstance = NewArbitrageManager(symbolPair)
 
-	go NewArbitrageTask(
+	ArbitrageManagerInstance.Run()
+
+	NewArbitrageTask(
 		config.Config.BinanceApiKey,
 		config.Config.BinanceSecretKey,
 		config.Config.MexcApiKey,
@@ -23,7 +25,5 @@ func TestArbitrageTask(t *testing.T) {
 		symbolPair,
 		0.0007,
 		0.0015,
-	)
-
-	ArbitrageManagerInstance.StartWsBookTicker()
+	).Run()
 }

@@ -1,6 +1,7 @@
 package binance
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"testing"
@@ -8,101 +9,64 @@ import (
 	"github.com/isther/arbitrage/config"
 )
 
-var (
-	WebsocketApiServiceManager = NewWebsocketServiceManager()
-
-	requestCh  = make(chan *WsApiRequest)
-	responseCh = make(chan *WsApiEvent)
-	doneC      chan struct{}
-	stopC      chan struct{}
-)
-
-func init() {
-	config.Load("config.yaml")
-
-	go func() {
-		var (
-			restartCh = make(chan struct{})
-		)
-		for {
-			requestCh, responseCh, doneC, stopC = WebsocketApiServiceManager.StartWsApi(
-				func(msg []byte) {
-					wsApiEvent, method, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
-					if err != nil {
-						log.Println("[ERROR] Failed to parse wsApiEvent:", err)
-						return
-					}
-
-					switch method {
-					case Ping:
-					case ServerTime:
-					case ExchangeInfo:
-					case AccountStatus:
-					case OrderTrade:
-					}
-
-					responseCh <- wsApiEvent
-				},
-				func(err error) {
-					restartCh <- struct{}{}
-					// panic(err)
-				},
-			)
-			<-restartCh
-		}
-	}()
-}
-
 func TestWsApiMethod(t *testing.T) {
+	config.Load("../config.yaml")
+
 	var (
 		apiKey    = config.Config.BinanceApiKey
 		secretKey = config.Config.BinanceSecretKey
-		w         sync.WaitGroup
+		wg        sync.WaitGroup
+		// doneC                      chan struct{}
+		// stopC                      chan struct{}
+		WebsocketApiServiceManager = NewWebsocketServiceManager()
 	)
 
-	go func() {
-		for {
-			response := <-responseCh
-			log.Println(response)
-			w.Done()
-		}
-	}()
+	// requestCh, responseCh, doneC, stopC = WebsocketApiServiceManager.StartWsApi(
+	_, _ = WebsocketApiServiceManager.StartWsApi(
+		func(msg []byte) {
+			wsApiEvent, method, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
+			if err != nil {
+				log.Println("[ERROR] Failed to parse wsApiEvent:", err)
+				return
+			}
+
+			log.Println(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+			wg.Done()
+		},
+		func(err error) {
+			panic(err)
+		},
+	)
 
 	// Ping
-	ping := NewPing()
-	requestCh <- ping
-	w.Add(1)
+	WebsocketApiServiceManager.Send(NewPing())
+	wg.Add(1)
 
 	// ServerTime
-	serverTime := NewServerTime()
-	requestCh <- serverTime
-	w.Add(1)
+	WebsocketApiServiceManager.Send(NewServerTime())
+	wg.Add(1)
 
 	// ExchangeInfo
-	exchangeInfo := NewSpotExchangeInfo()
-	requestCh <- exchangeInfo
-	w.Add(1)
+	WebsocketApiServiceManager.Send(NewSpotExchangeInfo())
+	wg.Add(1)
 
 	// AccountStatus
-	accountStatus := NewAccountStatus(apiKey, secretKey)
-	requestCh <- accountStatus
-	w.Add(1)
+	WebsocketApiServiceManager.Send(NewAccountStatus(apiKey, secretKey))
+	wg.Add(1)
 
 	// OrderTrade
 	params := NewOrderTradeParmes(apiKey).
-		Symbol("BTCUSDT").Side(SideTypeSell).OrderType(OrderTypeLimit).
+		Symbol("BTCUSDT").Side(SideTypeBuy).OrderType(OrderTypeLimit).
 		NewOrderRespType(NewOrderRespTypeACK).TimeInForce(TimeInForceTypeGTC).
-		Price("28050.00").Quantity("0.01000000").
+		Price("30000.000000").Quantity("0.0005101").
 		Signature(secretKey)
 
-	// orderTrade := NewOrderTrade(params)
-	// requestCh <- orderTrade
+	// WebsocketApiServiceManager.Send(NewOrderTrade(params))
 	// w.Add(1)
 
 	// Test
-	orderTradeTest := NewOrderTradeTest(params)
-	requestCh <- orderTradeTest
-	w.Add(1)
+	WebsocketApiServiceManager.Send(NewOrderTradeTest(params))
+	wg.Add(1)
 
-	w.Wait()
+	wg.Wait()
 }

@@ -3,12 +3,18 @@ package main
 import (
 	"log"
 
+	binancesdk "github.com/adshao/go-binance/v2"
+	"github.com/isther/arbitrage/binance"
 	binancemexc "github.com/isther/arbitrage/binance-mexc"
 	"github.com/isther/arbitrage/config"
 )
 
 func init() {
 	config.Load("config.yaml")
+
+	// Keep ws alive
+	binance.WebsocketKeepalive = true
+	binancesdk.WebsocketKeepalive = true
 }
 
 func main() {
@@ -20,7 +26,9 @@ func main() {
 	}
 	binancemexc.ArbitrageManagerInstance = binancemexc.NewArbitrageManager(symbolPair)
 
-	go binancemexc.NewArbitrageTask(
+	binancemexc.ArbitrageManagerInstance.Run()
+
+	binancemexc.NewArbitrageTask(
 		config.Config.BinanceApiKey,
 		config.Config.BinanceSecretKey,
 		config.Config.MexcApiKey,
@@ -29,6 +37,4 @@ func main() {
 		0.00005,
 		0.00015,
 	).Run()
-
-	binancemexc.ArbitrageManagerInstance.StartWsBookTicker()
 }

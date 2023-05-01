@@ -88,25 +88,25 @@ func (wsApiEvent *WsApiEvent) parseEvent(method WsApiMethod) error {
 }
 
 type WebsocketServiceManager struct {
-	events map[string]WsApiMethod
+	events    map[string]WsApiMethod
+	requestCh chan *WsApiRequest
 }
 
 func NewWebsocketServiceManager() *WebsocketServiceManager {
 	return &WebsocketServiceManager{
-		events: make(map[string]WsApiMethod),
+		requestCh: make(chan *WsApiRequest),
+		events:    make(map[string]WsApiMethod),
 	}
 }
 
-func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler ErrHandler) (chan *WsApiRequest, chan *WsApiEvent, chan struct{}, chan struct{}) {
-	log.Println("Start websocket api service.")
+func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}) {
+	log.Println("Start binance websocket api service.")
 	var (
-		requestCh  = make(chan *WsApiRequest)
-		responseCh = make(chan *WsApiEvent)
-		msgC       chan []byte
-		doneC      chan struct{}
-		stopC      chan struct{}
-		err        error
-		cnt        = 1
+		msgC  chan []byte
+		doneC chan struct{}
+		stopC chan struct{}
+		err   error
+		cnt   = 1
 	)
 
 	// Set up the connection
@@ -127,7 +127,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 
 	go func() {
 		for {
-			wsApiRequest := <-requestCh
+			wsApiRequest := <-w.requestCh
 			msg, err := json.Marshal(wsApiRequest)
 			if err != nil {
 				log.Println("[ERROR] Failed to marshal wsApiRequest:", err)
@@ -140,7 +140,11 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 		}
 	}()
 
-	return requestCh, responseCh, doneC, stopC
+	return doneC, stopC
+}
+
+func (w *WebsocketServiceManager) Send(req *WsApiRequest) {
+	w.requestCh <- req
 }
 
 func (w *WebsocketServiceManager) ParseWsApiEvent(result []byte) (*WsApiEvent, WsApiMethod, error) {
