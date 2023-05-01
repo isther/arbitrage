@@ -113,7 +113,6 @@ func (t *Task) Trade() {
 	binanceSymbolAskPrice, _ := decimal.NewFromString(binanceEvent.BestAskPrice)
 	mexcSymbolBidPrice, _ := decimal.NewFromString(mexcEvent.Data.BidPrice)
 	if t.judgeRatio(false, binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice) {
-		log.Println("Do mode 2")
 		var (
 			doneBinanceCh = make(chan struct{})
 			doneMexcCh    = make(chan struct{})
@@ -166,7 +165,6 @@ func (t *Task) Trade() {
 	mexcSymbolAskPrice, _ := decimal.NewFromString(mexcEvent.Data.AskPrice)
 	binanceSymbolBidPrice, _ := decimal.NewFromString(binanceEvent.BestBidPrice)
 	if t.judgeRatio(true, binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice) {
-		log.Println("Do mode 1")
 		var (
 			doneBinanceCh = make(chan struct{})
 			doneMexcCh    = make(chan struct{})
@@ -231,15 +229,15 @@ func (t *Task) judgeRatio(reverse bool, taPrice, tbPrice, stableSymbolPrice deci
 					tbPrice,
 				),
 			)
-			// if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
-		log.Println(
-			"[Mode2]",
-			"TUSD/USDT: ", stableSymbolPrice,
-			"BTC/TUSD: ", taPrice,
-			"BTC/USDT: ", tbPrice,
-			"Ratio:", ratio,
-		)
-		// }
+		if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
+			log.Println(
+				"[Mode2]",
+				"TUSD/USDT: ", stableSymbolPrice,
+				"BTC/TUSD: ", taPrice,
+				"BTC/USDT: ", tbPrice,
+				"Ratio:", ratio,
+			)
+		}
 	} else {
 		ratio = stableSymbolPrice.
 			Sub(
@@ -248,15 +246,15 @@ func (t *Task) judgeRatio(reverse bool, taPrice, tbPrice, stableSymbolPrice deci
 				),
 			)
 
-			// if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
-		log.Println(
-			"[Mode1]",
-			"TUSD/USDT: ", stableSymbolPrice,
-			"BTC/TUSD: ", taPrice,
-			"BTC/USDT: ", tbPrice,
-			"Ratio:", ratio,
-		)
-		// }
+		if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
+			log.Println(
+				"[Mode1]",
+				"TUSD/USDT: ", stableSymbolPrice,
+				"BTC/TUSD: ", taPrice,
+				"BTC/USDT: ", tbPrice,
+				"Ratio:", ratio,
+			)
+		}
 	}
 
 	return 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0
