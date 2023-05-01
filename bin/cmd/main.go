@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	binancemexc "github.com/isther/arbitrage/binance-mexc"
 	"github.com/isther/arbitrage/config"
 )
@@ -10,6 +12,7 @@ func init() {
 }
 
 func main() {
+	log.Println(config.Config)
 	symbolPair := binancemexc.SymbolPair{
 		BinanceSymbol:    "BTCTUSD",
 		StableCoinSymbol: "TUSDUSDT",

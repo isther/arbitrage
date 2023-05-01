@@ -18,7 +18,9 @@ COPY --from=builder /build/config.yaml /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y build-essential curl npm
+RUN apt-get install -y gcc curl npm
+
+# install nodejs
 RUN npm install n -g
 RUN n lts
 
