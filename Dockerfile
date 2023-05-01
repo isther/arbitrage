@@ -11,19 +11,10 @@ COPY . .
 
 RUN go build -o cmd bin/cmd/main.go
 
-FROM ubuntu:latest as runner
+FROM scratch as runner
 
 COPY --from=builder /build/cmd /
 COPY --from=builder /build/config.yaml /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y gcc curl npm
-
-# install nodejs
-RUN npm install n -g
-RUN n lts
-
-EXPOSE 8080
 
 ENTRYPOINT ["/cmd"]
