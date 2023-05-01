@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/adshao/go-binance/v2"
-	"github.com/isther/arbitrage/websocket-api/mexc"
+	"github.com/isther/arbitrage/mexc"
 )
 
 type ArbitrageManager struct {

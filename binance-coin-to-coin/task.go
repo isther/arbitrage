@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/isther/arbitrage/websocket-api/binance"
+	"github.com/isther/arbitrage/binance"
 	"github.com/shopspring/decimal"
 )
 

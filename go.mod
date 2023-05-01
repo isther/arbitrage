@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/adshao/go-binance/v2 v2.4.1
-	github.com/aws/jsii-runtime-go v1.80.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/shopspring/decimal v1.3.1
@@ -13,7 +12,6 @@ require (
 )
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

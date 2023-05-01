@@ -6,7 +6,7 @@ import (
 	"github.com/isther/arbitrage/config"
 )
 
-func TestArbitrageTas(t *testing.T) {
+func TestArbitrageTask(t *testing.T) {
 	config.Load("../config.yaml")
 	symbolPair := SymbolPair{
 		BinanceSymbol:    "BTCTUSD",

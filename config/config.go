@@ -30,6 +30,7 @@ binanceApiKey: ""
 binanceSecretKey: ""
 mexcApiKey: ""
 mexcSecretKey: ""
+mexcCookie:""
 `
 )
 
@@ -41,6 +42,7 @@ type ServerConfig struct {
 	BinanceSecretKey string `json:"binanceSecretKey" yaml:"binanceSecretKey"`
 	MexcApiKey       string `json:"mexcApiKey" yaml:"mexcApiKey"`
 	MexcSecretKey    string `json:"mexcSecretKey" yaml:"mexcSecretKey"`
+	MexcCookie       string `json:"mexcCookie" yaml:"mexcCookie"`
 }
 
 func loadConfigFile(filename string) error {

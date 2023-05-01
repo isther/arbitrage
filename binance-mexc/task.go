@@ -6,9 +6,9 @@ import (
 	"sync"
 
 	binancesdk "github.com/adshao/go-binance/v2"
-	"github.com/isther/arbitrage/mexcsdk"
-	"github.com/isther/arbitrage/websocket-api/binance"
-	"github.com/isther/arbitrage/websocket-api/mexc"
+	"github.com/isther/arbitrage/binance"
+	"github.com/isther/arbitrage/config"
+	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
 )
 
@@ -144,11 +144,14 @@ func (t *Task) Trade() {
 
 		// Trade mexc
 		go func() {
-			res := t.getOrderMexcTade(
-				t.symbolPairs.MexcSymbol,
-				string(mexc.SideTypeSell),
+			res, err := mexc.MexcBTCSell(
+				config.Config.MexcCookie,
+				mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(),
 				aQty.Mul(stableSymbolAskPrice).Div(mexcSymbolBidPrice).String(),
 			)
+			if err != nil {
+				log.Println("mexc trade error", err)
+			}
 
 			log.Println("mexc trade", res)
 			doneMexcCh <- struct{}{}
@@ -194,14 +197,18 @@ func (t *Task) Trade() {
 
 		// Trade mexc
 		go func() {
-			res := t.getOrderMexcTade(
-				t.symbolPairs.MexcSymbol,
-				string(mexc.SideTypeBuy),
+			res, err := mexc.MexcBTCBuy(
+				config.Config.MexcCookie,
+				mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(),
 				aQty.Mul(stableSymbolBidPrice).Div(mexcSymbolAskPrice).String(),
 			)
+			if err != nil {
+				log.Println("mexc trade error", err)
+			}
 
 			log.Println("mexc trade", res)
 			doneMexcCh <- struct{}{}
+
 		}()
 
 		<-doneBinanceCh
@@ -267,27 +274,4 @@ func (t *Task) getOrderBinanceTrade(symbol string, side binance.SideType, qty st
 		return binance.NewOrderTradeTest(params)
 	}
 	return binance.NewOrderTrade(params)
-}
-
-func (t *Task) getOrderMexcTade(symbol, side, qty string) interface{} {
-	var (
-		spot      = mexcsdk.NewSpot(&t.mexcApiKey, &t.mexcSecretKey)
-		options   = make(map[string]string)
-		orderType = string(mexc.OrderTypeMarket)
-	)
-	// options:{
-	// 		timeInForce,
-	// 		quantity,
-	// 		quoteOrderQty,
-	// 		price,
-	// 		newClientOrderId,
-	// 		stopPrice,
-	// 		icebergQty,
-	// 		newOrderRespType,
-	// 		recvWindow
-	// }
-	options["timeInForce"] = string(mexc.TimeInForceTypeGTC)
-	options["quantity"] = qty
-
-	return spot.NewOrder(&symbol, &side, &orderType, options)
 }

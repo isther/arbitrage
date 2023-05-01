@@ -3,7 +3,7 @@ package binancemexc
 import (
 	"log"
 
-	"github.com/isther/arbitrage/websocket-api/binance"
+	"github.com/isther/arbitrage/binance"
 )
 
 var (
