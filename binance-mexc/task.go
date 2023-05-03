@@ -269,7 +269,7 @@ func (t *Task) judgeRatio(reverse bool, taPrice, tbPrice, stableSymbolPrice deci
 func (t *Task) getOrderBinanceTrade(symbol string, side binance.SideType, qty string) *binance.WsApiRequest {
 	params := binance.NewOrderTradeParmes(t.binanceApiKey).
 		NewOrderRespType(binance.NewOrderRespTypeRESULT).
-		TimeInForce(binance.TimeInForceTypeGTC).
+		TimeInForce(binance.TimeInForceTypeGTC). // 在服务器上请注释这行
 		Symbol(symbol).Side(side).
 		OrderType(binance.OrderTypeMarket).Quantity(qty).
 		Signature(t.binanceSecretKey)
