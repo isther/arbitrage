@@ -118,24 +118,25 @@ func (t *Task) Trade() {
 			doneMexcCh    = make(chan struct{})
 		)
 		// 币安把TUSD买入为BTC、抹茶把BTC卖出为USDT；
-		stableSymbolAskQty, _ := decimal.NewFromString(stableEvent.BestAskQty)   // TUSDUSDT
-		binanceSymbolAskQty, _ := decimal.NewFromString(binanceEvent.BestAskQty) // BTCTUSD
-		mexcSymbolBidQty, _ := decimal.NewFromString(mexcEvent.Data.BidQty)      // BTCUSDT
+		// stableSymbolAskQty, _ := decimal.NewFromString(stableEvent.BestAskQty)   // TUSDUSDT
+		// binanceSymbolAskQty, _ := decimal.NewFromString(binanceEvent.BestAskQty) // BTCTUSD
+		// mexcSymbolBidQty, _ := decimal.NewFromString(mexcEvent.Data.BidQty)      // BTCUSDT
 
-		stabldToAQty := stableSymbolAskQty
-		binanceToAQty := binanceSymbolAskQty.Mul(binanceSymbolAskPrice)
-		mexcToAQty := mexcSymbolBidQty.Mul(mexcSymbolBidPrice).Div(stableSymbolAskPrice)
+		// stabldToAQty := stableSymbolAskQty
+		// binanceToAQty := binanceSymbolAskQty.Mul(binanceSymbolAskPrice)
+		// mexcToAQty := mexcSymbolBidQty.Mul(mexcSymbolBidPrice).Div(stableSymbolAskPrice)
 
 		// Quantity
-		aQty := decimal.Min(stabldToAQty, binanceToAQty, mexcToAQty, decimal.NewFromFloat(11.0))
-		aQty = decimal.Max(aQty, decimal.NewFromFloat(11.0))
+		// aQty := decimal.Min(stabldToAQty, binanceToAQty, mexcToAQty, decimal.NewFromFloat(11.0))
+		// aQty = decimal.Max(aQty, decimal.NewFromFloat(11.0))
 
 		// Trade binance
 		go func() {
 			ArbitrageManagerInstance.websocketApiServiceManager.Send(t.getOrderBinanceTrade(
 				t.symbolPairs.BinanceSymbol,
 				binance.SideTypeBuy,
-				aQty.Div(binanceSymbolAskPrice).String(),
+				// aQty.Div(binanceSymbolAskPrice).String(),
+				"0.0004",
 			))
 
 			doneBinanceCh <- struct{}{}
@@ -146,7 +147,8 @@ func (t *Task) Trade() {
 			res, err := mexc.MexcBTCSell(
 				config.Config.MexcCookie,
 				mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(),
-				aQty.Mul(stableSymbolAskPrice).Div(mexcSymbolBidPrice).String(),
+				// aQty.Mul(stableSymbolAskPrice).Div(mexcSymbolBidPrice).String(),
+				"0.0004",
 			)
 			if err != nil {
 				log.Println("mexc trade error", err)
@@ -170,24 +172,25 @@ func (t *Task) Trade() {
 			doneMexcCh    = make(chan struct{})
 		)
 		// 币安把BTC卖出为TUSD、抹茶把USDT买入为BTC；
-		stableSymbolBidQty, _ := decimal.NewFromString(stableEvent.BestBidQty)   // TUSDUSDT
-		mexcSymbolAskQty, _ := decimal.NewFromString(mexcEvent.Data.AskQty)      // BTCUSDT
-		binanceSymbolBidQty, _ := decimal.NewFromString(binanceEvent.BestBidQty) //BTCTUSD
+		// stableSymbolBidQty, _ := decimal.NewFromString(stableEvent.BestBidQty)   // TUSDUSDT
+		// mexcSymbolAskQty, _ := decimal.NewFromString(mexcEvent.Data.AskQty)      // BTCUSDT
+		// binanceSymbolBidQty, _ := decimal.NewFromString(binanceEvent.BestBidQty) //BTCTUSD
 
-		stabldToAQty := stableSymbolBidQty
-		binanceToAQty := binanceSymbolBidQty.Mul(binanceSymbolBidPrice)
-		mexcToAQty := mexcSymbolAskQty.Mul(mexcSymbolAskPrice).Div(stableSymbolBidPrice)
+		// stabldToAQty := stableSymbolBidQty
+		// binanceToAQty := binanceSymbolBidQty.Mul(binanceSymbolBidPrice)
+		// mexcToAQty := mexcSymbolAskQty.Mul(mexcSymbolAskPrice).Div(stableSymbolBidPrice)
 
 		// Quantity
-		aQty := decimal.Min(stabldToAQty, binanceToAQty, mexcToAQty, decimal.NewFromFloat(11.0))
-		aQty = decimal.Max(aQty, decimal.NewFromFloat(11.0))
+		// aQty := decimal.Min(stabldToAQty, binanceToAQty, mexcToAQty, decimal.NewFromFloat(11.0))
+		// aQty = decimal.Max(aQty, decimal.NewFromFloat(11.0))
 
 		// Trade binance
 		go func() {
 			ArbitrageManagerInstance.websocketApiServiceManager.Send(t.getOrderBinanceTrade(
 				t.symbolPairs.BinanceSymbol,
 				binance.SideTypeSell,
-				aQty.Div(binanceSymbolBidPrice).String(),
+				// aQty.Div(binanceSymbolBidPrice).String(),
+				"0.0004",
 			))
 
 			doneBinanceCh <- struct{}{}
@@ -198,7 +201,8 @@ func (t *Task) Trade() {
 			res, err := mexc.MexcBTCBuy(
 				config.Config.MexcCookie,
 				mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(),
-				aQty.Mul(stableSymbolBidPrice).Div(mexcSymbolAskPrice).String(),
+				// aQty.Mul(stableSymbolBidPrice).Div(mexcSymbolAskPrice).String(),
+				"0.0004",
 			)
 			if err != nil {
 				log.Println("mexc trade error", err)
