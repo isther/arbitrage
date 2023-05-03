@@ -1,6 +1,7 @@
 package binancemexc
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -223,45 +224,46 @@ func (t *Task) Trade() {
 func (t *Task) judgeRatio(reverse bool, taPrice, tbPrice, stableSymbolPrice decimal.Decimal) bool {
 	var (
 		ratio decimal.Decimal
+		mod   = 0
+
+		ratioLog = func() {
+			log.Println(
+				fmt.Sprintf(
+					"[Mode%d] TUSD/USDT: %s BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
+					mod,
+					stableSymbolPrice,
+					taPrice,
+					tbPrice,
+					ratio.Mul(decimal.NewFromFloat(10000)).String(),
+				),
+			)
+		}
 	)
 	log.SetFlags(log.Ldate | log.Lmicroseconds)
 
 	if !reverse {
+		mod = 2
 		ratio = decimal.NewFromFloat32(1).Div(stableSymbolPrice).
 			Sub(
 				taPrice.Div(
 					tbPrice,
 				),
 			)
-		if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
-			log.Println(
-				"[Mode2]",
-				"TUSD/USDT: ", stableSymbolPrice,
-				"BTC/TUSD: ", taPrice,
-				"BTC/USDT: ", tbPrice,
-				"Ratio:", ratio,
-			)
-		}
 	} else {
+		mod = 1
 		ratio = stableSymbolPrice.
 			Sub(
 				tbPrice.Div(
 					taPrice,
 				),
 			)
-
-		if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
-			log.Println(
-				"[Mode1]",
-				"TUSD/USDT: ", stableSymbolPrice,
-				"BTC/TUSD: ", taPrice,
-				"BTC/USDT: ", tbPrice,
-				"Ratio:", ratio,
-			)
-		}
 	}
 
-	return 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0
+	if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
+		ratioLog()
+		return true
+	}
+	return false
 }
 
 func (t *Task) getOrderBinanceTrade(symbol string, side binance.SideType, qty string) *binance.WsApiRequest {
