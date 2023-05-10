@@ -1,6 +1,12 @@
 package binance
 
-import "github.com/google/uuid"
+import (
+	"fmt"
+	"net/url"
+
+	binancesdk "github.com/adshao/go-binance/v2"
+	"github.com/google/uuid"
+)
 
 type WsApiPingParams struct{}
 
@@ -70,4 +76,27 @@ func NewSpotExchangeInfo() *WsApiRequest {
 		Method: ExchangeInfo,
 		Params: WsApiExchangeInfoParams{Permissions: []string{"SPOT"}},
 	}
+}
+
+func NewKlineInfo(Symbol string, interval string) {
+	var (
+		params    = url.Values{}
+		timestamp = currentTimestamp() - TimeOffset
+	)
+
+	params.Set(string(PARAM_TIMESTAMP), fmt.Sprintf("%v", timestamp))
+
+	wsKlineHandler := func(event *binancesdk.WsKlineEvent) {
+		fmt.Println(event)
+	}
+	errHandler := func(err error) {
+		fmt.Println(err)
+	}
+	doneC, _, err := binancesdk.WsKlineServe(Symbol, interval, wsKlineHandler, errHandler)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	<-doneC
+	return
 }

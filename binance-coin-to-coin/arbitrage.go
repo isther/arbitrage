@@ -1,4 +1,4 @@
-package arbitrage
+package bimc
 
 var (
 	TestTrade                = false

@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 
-	binancesdk "github.com/adshao/go-binance/v2"
-	"github.com/isther/arbitrage/binance"
 	binancemexc "github.com/isther/arbitrage/binance-mexc"
 	"github.com/isther/arbitrage/config"
+	binancesdk "github.com/adshao/go-binance/v2"
+	"github.com/isther/arbitrage/binance"
 )
 
 func init() {

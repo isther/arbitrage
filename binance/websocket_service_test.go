@@ -68,5 +68,16 @@ func TestWsApiMethod(t *testing.T) {
 	WebsocketApiServiceManager.Send(NewOrderTradeTest(params))
 	wg.Add(1)
 
+	fmt.Println("test account...........")
+	// AccountStatus
+	// WebsocketApiServiceManager.Send(WsUserData(apiKey, secretKey))
+	WsUserData(apiKey, secretKey)
+	// wg.Add(1)
+
 	wg.Wait()
+}
+
+func TestKlineInfo(t *testing.T) {
+	config.Load("../config.yaml")
+	NewKlineInfo("BTCUSDT", "1s")
 }

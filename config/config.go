@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/isther/arbitrage/utils"
 	"gopkg.in/yaml.v2"
 )
 
@@ -50,8 +49,8 @@ func loadConfigFile(filename string) error {
 		return errors.New("Config filename is empty")
 	}
 
-	if !utils.PathExists(filename) {
-		utils.CreateAndWriteFile(filepath.Join(".", filename), configFileContent)
+	if !PathExists(filename) {
+		CreateAndWriteFile(filepath.Join(".", filename), configFileContent)
 	}
 
 	contentBytes, err := ioutil.ReadFile(filename)

@@ -1,10 +1,10 @@
-package arbitrage
+package bimc
 
 import (
 	"log"
 	"sync"
 
-	"github.com/adshao/go-binance/v2"
+	binancesdk "github.com/adshao/go-binance/v2"
 )
 
 type ArbitrageManager struct {
@@ -13,10 +13,10 @@ type ArbitrageManager struct {
 	symbolsMap map[string]struct{}
 	symbols    []string
 
-	handler    binance.WsBookTickerHandler
-	errHandler binance.ErrHandler
+	handler    binancesdk.WsBookTickerHandler
+	errHandler binancesdk.ErrHandler
 
-	bookTickerMap map[string]*binance.WsBookTickerEvent
+	bookTickerMap map[string]*binancesdk.WsBookTickerEvent
 
 	restartCh chan struct{}
 }
@@ -26,12 +26,12 @@ func NewArbitrageManager(symbols ...string) *ArbitrageManager {
 		symbolsMap: make(map[string]struct{}),
 		symbols:    []string{},
 
-		bookTickerMap: make(map[string]*binance.WsBookTickerEvent),
+		bookTickerMap: make(map[string]*binancesdk.WsBookTickerEvent),
 
 		restartCh: make(chan struct{}),
 	}
 
-	b.SetHandler(func(event *binance.WsBookTickerEvent) {
+	b.SetHandler(func(event *binancesdk.WsBookTickerEvent) {
 		log.Printf("%+v\n", event)
 
 		b.lock.Lock()
@@ -72,18 +72,18 @@ func (b *ArbitrageManager) Restart() *ArbitrageManager {
 
 func (b *ArbitrageManager) GetBookTickerEvent(
 	symbolA, symbolB, symbolC string) (
-	*binance.WsBookTickerEvent, *binance.WsBookTickerEvent, *binance.WsBookTickerEvent) {
+	*binancesdk.WsBookTickerEvent, *binancesdk.WsBookTickerEvent, *binancesdk.WsBookTickerEvent) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
 	return b.bookTickerMap[symbolA], b.bookTickerMap[symbolB], b.bookTickerMap[symbolC]
 }
 
-func (b *ArbitrageManager) SetHandler(handler binance.WsBookTickerHandler) {
+func (b *ArbitrageManager) SetHandler(handler binancesdk.WsBookTickerHandler) {
 	b.handler = handler
 }
 
-func (b *ArbitrageManager) SetErrHandler(errHandler binance.ErrHandler) {
+func (b *ArbitrageManager) SetErrHandler(errHandler binancesdk.ErrHandler) {
 	b.errHandler = errHandler
 }
 
@@ -92,7 +92,7 @@ func (b *ArbitrageManager) startWebsocket() (chan struct{}, chan struct{}) {
 	defer b.lock.RUnlock()
 
 	log.Println(b.symbols)
-	doneC, stopC, err := binance.WsCombinedBookTickerServe(b.symbols, b.handler, b.errHandler)
+	doneC, stopC, err := binancesdk.WsCombinedBookTickerServe(b.symbols, b.handler, b.errHandler)
 	if err != nil {
 		panic(err)
 	}

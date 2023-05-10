@@ -1,9 +1,10 @@
 package binance
 
 import (
+	// "time"
 	"fmt"
 	"net/url"
-
+	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/google/uuid"
 )
 
@@ -12,7 +13,7 @@ type AccountStatusParams struct {
 	Timestamp int64  `json:"timestamp"`
 	Signature string `json:"signature"`
 }
-
+type WsUserDataParams struct{}
 // AccountEvent define account info
 type AccountEvent struct {
 	MakerCommission            int64           `json:"makerCommission"`
@@ -63,4 +64,34 @@ func NewAccountStatus(apiKey, secretKey string) *WsApiRequest {
 			Signature: signature(params.Encode(), secretKey),
 		},
 	}
+}
+
+func WsUserData(apiKey string, secretKey string)  {
+
+	var (
+		params    = url.Values{}
+		timestamp = currentTimestamp() - TimeOffset
+		listenKey = CreateListenKey()
+	)
+
+	params.Set(string(PARAM_API_KEY), apiKey)
+	params.Set(string(PARAM_TIMESTAMP), fmt.Sprintf("%v", timestamp))
+	wsHandler := func(event *binancesdk.WsUserDataEvent) {
+		fmt.Println(event)
+		// fmt.Println("event")
+	}
+	errHandler := func(err error) {
+		fmt.Println(err)
+	}
+	fmt.Println("UserDataStream Websocket...")
+	doneC, stopC, err := binancesdk.WsUserDataServe(listenKey, wsHandler, errHandler)
+
+	if err != nil {
+		fmt.Println(err)
+		return 
+	}
+	stopC <- struct{}{}
+	<-doneC
+
+	return 
 }

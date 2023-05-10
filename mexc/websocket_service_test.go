@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/isther/arbitrage/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,6 +46,34 @@ func TestWsPartialDepthServe(t *testing.T) {
 func TestWsBookTickerServe(t *testing.T) {
 	assert := assert.New(t)
 	doneC, stopC, err := WsBookTickerServe("BTCUSDT", func(event *WsBookTickerEvent) { fmt.Printf("%+v\n", event) }, errHandler)
+	assert.Nil(err)
+
+	go func() {
+		time.Sleep(10 * time.Second)
+		stopC <- struct{}{}
+	}()
+
+	<-doneC
+}
+
+func TestWsAccountInfoServe(t *testing.T) {
+	assert := assert.New(t)
+	config.Load("../config.yaml")
+	doneC, stopC, err := WsAccountInfoServe(func(event *WsPrivateAccountEvent) { fmt.Printf("%+v\n", event) }, errHandler)
+	assert.Nil(err)
+
+	go func() {
+		time.Sleep(10 * time.Second)
+		stopC <- struct{}{}
+	}()
+
+	<-doneC
+}
+
+func TestWsDealsInfoServe(t *testing.T) {
+	assert := assert.New(t)
+	config.Load("../config.yaml")
+	doneC, stopC, err := WsDealsInfoServe(func(event *WsPrivateDealsEvent) { fmt.Printf("%+v\n", event) }, errHandler)
 	assert.Nil(err)
 
 	go func() {
