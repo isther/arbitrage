@@ -15,9 +15,9 @@ func TestArbitrageManager(t *testing.T) {
 		StableCoinSymbol: "TUSDUSDT",
 		MexcSymbol:       "BTCUSDT",
 	}
-	ArbitrageManagerInstance = NewArbitrageManager(symbolPair)
+	arbitrageManager := NewArbitrageManager(symbolPair)
+	arbitrageManager.Run()
 
-	ArbitrageManagerInstance.Run()
 	time.Sleep(2 * time.Second)
 	params := binance.NewOrderTradeParmes(config.Config.BinanceApiKey).
 		Symbol("BTCUSDT").Side(binance.SideTypeBuy).OrderType(binance.OrderTypeLimit).
@@ -25,6 +25,6 @@ func TestArbitrageManager(t *testing.T) {
 		Price("30000.000000").Quantity("0.0005101").
 		Signature(config.Config.BinanceSecretKey)
 
-	ArbitrageManagerInstance.websocketApiServiceManager.Send(binance.NewOrderTrade(params))
+	arbitrageManager.websocketApiServiceManager.Send(binance.NewOrderTrade(params))
 	time.Sleep(5 * time.Second)
 }

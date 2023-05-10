@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 
-	binancemexc "github.com/isther/arbitrage/binance-mexc"
-	"github.com/isther/arbitrage/config"
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
+	binancemexc "github.com/isther/arbitrage/binance-mexc"
+	"github.com/isther/arbitrage/config"
 )
 
 func init() {
@@ -24,17 +24,18 @@ func main() {
 		StableCoinSymbol: "TUSDUSDT",
 		MexcSymbol:       "BTCUSDT",
 	}
-	binancemexc.ArbitrageManagerInstance = binancemexc.NewArbitrageManager(symbolPair)
 
-	binancemexc.ArbitrageManagerInstance.Run()
-
-	binancemexc.NewArbitrageTask(
-		config.Config.BinanceApiKey,
-		config.Config.BinanceSecretKey,
-		config.Config.MexcApiKey,
-		config.Config.MexcSecretKey,
-		symbolPair,
-		0.00005,
-		0.00015,
-	).Run()
+	arbitrageManager := binancemexc.NewArbitrageManager(symbolPair)
+	arbitrageManager.Run()
+	arbitrageManager.StartTask(
+		binancemexc.NewArbitrageTask(
+			config.Config.BinanceApiKey,
+			config.Config.BinanceSecretKey,
+			config.Config.MexcApiKey,
+			config.Config.MexcSecretKey,
+			symbolPair,
+			0.0007,
+			0.0015,
+		),
+	)
 }

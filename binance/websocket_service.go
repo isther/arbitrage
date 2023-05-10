@@ -89,12 +89,12 @@ func (wsApiEvent *WsApiEvent) parseEvent(method WsApiMethod) error {
 
 type WebsocketServiceManager struct {
 	events    map[string]WsApiMethod
-	requestCh chan *WsApiRequest
+	RequestCh chan *WsApiRequest
 }
 
 func NewWebsocketServiceManager() *WebsocketServiceManager {
 	return &WebsocketServiceManager{
-		requestCh: make(chan *WsApiRequest),
+		RequestCh: make(chan *WsApiRequest),
 		events:    make(map[string]WsApiMethod),
 	}
 }
@@ -127,7 +127,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 
 	go func() {
 		for {
-			wsApiRequest := <-w.requestCh
+			wsApiRequest := <-w.RequestCh
 			msg, err := json.Marshal(wsApiRequest)
 			if err != nil {
 				log.Println("[ERROR] Failed to marshal wsApiRequest:", err)
@@ -144,7 +144,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 }
 
 func (w *WebsocketServiceManager) Send(req *WsApiRequest) {
-	w.requestCh <- req
+	w.RequestCh <- req
 }
 
 func (w *WebsocketServiceManager) ParseWsApiEvent(result []byte) (*WsApiEvent, WsApiMethod, error) {

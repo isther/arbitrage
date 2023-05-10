@@ -13,17 +13,18 @@ func TestArbitrageTask(t *testing.T) {
 		StableCoinSymbol: "TUSDUSDT",
 		MexcSymbol:       "BTCUSDT",
 	}
-	ArbitrageManagerInstance = NewArbitrageManager(symbolPair)
+	arbitrageManager := NewArbitrageManager(symbolPair)
+	arbitrageManager.Run()
 
-	ArbitrageManagerInstance.Run()
-
-	NewArbitrageTask(
-		config.Config.BinanceApiKey,
-		config.Config.BinanceSecretKey,
-		config.Config.MexcApiKey,
-		config.Config.MexcSecretKey,
-		symbolPair,
-		0.0007,
-		0.0015,
-	).Run()
+	arbitrageManager.StartTask(
+		NewArbitrageTask(
+			config.Config.BinanceApiKey,
+			config.Config.BinanceSecretKey,
+			config.Config.MexcApiKey,
+			config.Config.MexcSecretKey,
+			symbolPair,
+			0.0007,
+			0.0015,
+		),
+	)
 }

@@ -53,35 +53,40 @@ func NewArbitrageTask(
 	}
 }
 
-func (t *Task) Run() {
+func (t *Task) run(
+	binanceSymbolEventCh chan *binancesdk.WsBookTickerEvent,
+	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent,
+	mexcSymbolEventCh chan *mexc.WsBookTickerEvent,
+	binanceWsReqCh chan *binance.WsApiRequest,
+) {
 	for {
 		select {
-		case binanceSymbolEvent := <-ArbitrageManagerInstance.binanceSymbolEventCh:
+		case binanceSymbolEvent := <-binanceSymbolEventCh:
 			go func() {
 				if t.L.TryLock() {
 					defer t.L.Unlock()
 					t.binanceSymbolEvent = binanceSymbolEvent
-					t.Trade()
+					t.Trade(binanceWsReqCh)
 				} else {
 					log.Println("Wait")
 				}
 			}()
-		case stableCoinSymbolEvent := <-ArbitrageManagerInstance.stableCoinSymbolEventCh:
+		case stableCoinSymbolEvent := <-stableCoinSymbolEventCh:
 			go func() {
 				if t.L.TryLock() {
 					defer t.L.Unlock()
 					t.stableCoinSymbolEvent = stableCoinSymbolEvent
-					t.Trade()
+					t.Trade(binanceWsReqCh)
 				} else {
 					log.Println("Wait")
 				}
 			}()
-		case mexcSymbolEvent := <-ArbitrageManagerInstance.mexcSymbolEventCh:
+		case mexcSymbolEvent := <-mexcSymbolEventCh:
 			go func() {
 				if t.L.TryLock() {
 					defer t.L.Unlock()
 					t.mexcSymbolEvent = mexcSymbolEvent
-					t.Trade()
+					t.Trade(binanceWsReqCh)
 				} else {
 					log.Println("Wait")
 				}
@@ -93,7 +98,7 @@ func (t *Task) Run() {
 	}
 }
 
-func (t *Task) Trade() {
+func (t *Task) Trade(binanceWsReqCh chan *binance.WsApiRequest) {
 	stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
 	mexcEvent := t.mexcSymbolEvent
 	if stableEvent == nil || binanceEvent == nil || mexcEvent == nil {
@@ -133,12 +138,12 @@ func (t *Task) Trade() {
 
 		// Trade binance
 		go func() {
-			ArbitrageManagerInstance.websocketApiServiceManager.Send(t.getOrderBinanceTrade(
+			t.getOrderBinanceTrade(
 				t.symbolPairs.BinanceSymbol,
 				binance.SideTypeBuy,
 				// aQty.Div(binanceSymbolAskPrice).String(),
 				"0.0004",
-			))
+			)
 
 			doneBinanceCh <- struct{}{}
 		}()
@@ -187,12 +192,12 @@ func (t *Task) Trade() {
 
 		// Trade binance
 		go func() {
-			ArbitrageManagerInstance.websocketApiServiceManager.Send(t.getOrderBinanceTrade(
+			binanceWsReqCh <- t.getOrderBinanceTrade(
 				t.symbolPairs.BinanceSymbol,
 				binance.SideTypeSell,
 				// aQty.Div(binanceSymbolBidPrice).String(),
 				"0.0004",
-			))
+			)
 
 			doneBinanceCh <- struct{}{}
 		}()
