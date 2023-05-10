@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
 	binancemexc "github.com/isther/arbitrage/binance-mexc"
@@ -18,7 +16,6 @@ func init() {
 }
 
 func main() {
-	log.Println(config.Config)
 	symbolPair := binancemexc.SymbolPair{
 		BinanceSymbol:    "BTCTUSD",
 		StableCoinSymbol: "TUSDUSDT",
@@ -34,8 +31,8 @@ func main() {
 			config.Config.MexcApiKey,
 			config.Config.MexcSecretKey,
 			symbolPair,
-			0.0007,
-			0.0015,
+			0.00007,
+			0.00015,
 		),
 	)
 }
