@@ -108,6 +108,7 @@ func (t *Task) run(
 					{
 						defer t.L.Unlock()
 						t.binanceSymbolEvent = binanceSymbolEvent
+						trade()
 					}
 				}
 			}()
@@ -118,6 +119,7 @@ func (t *Task) run(
 					{
 						defer t.L.Unlock()
 						t.stableCoinSymbolEvent = stableCoinSymbolEvent
+						trade()
 					}
 				}
 			}()
@@ -128,6 +130,7 @@ func (t *Task) run(
 					{
 						defer t.L.Unlock()
 						t.mexcSymbolEvent = mexcSymbolEvent
+						trade()
 					}
 				}
 			}()
@@ -138,13 +141,6 @@ func (t *Task) run(
 		case <-t.stopCh:
 			log.Println("Stop")
 			return
-		default:
-			go func() {
-				if t.L.TryLock() {
-					defer t.L.Unlock()
-					trade()
-				}
-			}()
 		}
 	}
 }
