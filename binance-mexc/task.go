@@ -281,7 +281,7 @@ func (t *Task) close(
 		mexcSymbolAskPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.AskPrice)
 		binanceSymbolBidPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestBidPrice)
 
-		if ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, stableSymbolPrice, mexcSymbolAskPrice); ratioMode1.GreaterThanOrEqual(ratio) {
+		if ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolPrice); ratioMode1.GreaterThanOrEqual(ratio) {
 			t.ratioLog(ratioMode1, stableSymbolPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
 
 			// Trade
