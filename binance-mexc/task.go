@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -392,9 +391,9 @@ func (t *Task) getOrderBinanceTrade(symbol string, side binance.SideType, qty st
 		Symbol(symbol).Side(side).
 		OrderType(binance.OrderTypeMarket).Quantity(qty)
 
-	if runtime.GOOS == "linux" {
-		params.TimeInForce(binance.TimeInForceTypeGTC)
-	}
+	// if runtime.GOOS == "linux" {
+	// params.TimeInForce(binance.TimeInForceTypeGTC)
+	// }
 
 	return binance.NewOrderTrade(params.
 		Signature(t.binanceSecretKey))
