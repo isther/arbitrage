@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -285,7 +284,6 @@ func (t *Task) close(
 	}
 
 	time.Sleep(1 * time.Second)
-	os.Exit(0)
 }
 
 func (t *Task) tradeMode1(binanceWsReqCh chan *binance.WsApiRequest, binanceQty, mexcPrice, mexcQty string) {
