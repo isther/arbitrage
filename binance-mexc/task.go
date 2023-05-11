@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -45,7 +46,7 @@ func NewArbitrageTask(
 	mexcApiKey,
 	mexcSecretKey string,
 	symbolPairs SymbolPair,
-	minRatio, maxRatio float64) *Task {
+	ratio, minRatio, maxRatio float64) *Task {
 	return &Task{
 		binanceApiKey:    binanceApiKey,
 		binanceSecretKey: binanceSecretKey,
@@ -53,6 +54,7 @@ func NewArbitrageTask(
 		mexcSecretKey:    mexcSecretKey,
 		symbolPairs:      symbolPairs,
 		stopCh:           make(chan struct{}),
+		Ratio:            decimal.NewFromFloat(ratio),
 		MinRatio:         decimal.NewFromFloat(minRatio),
 		MaxRatio:         decimal.NewFromFloat(maxRatio),
 	}
@@ -236,7 +238,7 @@ func (t *Task) openMode2(
 		if TestTrade {
 
 		} else {
-			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.004")
+			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
 		}
 		return true, ratioMode2, stableSymbolAskPrice
 	}
@@ -371,7 +373,7 @@ func (t *Task) calculateRatioMode2(taPrice, tbPrice, stableSymbolPrice decimal.D
 		)
 }
 
-func (t *Task) ratioLog(ratio, taPrice, tbPrice, stableSymbolPrice decimal.Decimal) {
+func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decimal) {
 	log.Println(
 		fmt.Sprintf(
 			"[Mode%d] TUSD/USDT: %s BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
@@ -391,6 +393,7 @@ func (t *Task) getOrderBinanceTrade(symbol string, side binance.SideType, qty st
 		Symbol(symbol).Side(side).
 		OrderType(binance.OrderTypeMarket).Quantity(qty)
 
+	log.Println("GOOS", runtime.GOOS)
 	// if runtime.GOOS == "linux" {
 	// params.TimeInForce(binance.TimeInForceTypeGTC)
 	// }
