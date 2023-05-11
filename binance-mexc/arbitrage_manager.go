@@ -95,7 +95,7 @@ func (b *ArbitrageManager) Run() {
 }
 
 func (b *ArbitrageManager) StartTask(task *Task) {
-	task.run(b.binanceSymbolEventCh, b.stableCoinSymbolEventCh, b.mexcSymbolEventCh, b.websocketApiServiceManager.RequestCh)
+	task.run(b.websocketApiServiceManager.RequestCh, b.binanceSymbolEventCh, b.stableCoinSymbolEventCh, b.mexcSymbolEventCh)
 }
 
 func (b *ArbitrageManager) startWsBookTicker() {

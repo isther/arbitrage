@@ -62,10 +62,10 @@ func NewArbitrageTask(
 }
 
 func (t *Task) run(
+	binanceWsReqCh chan *binance.WsApiRequest,
 	binanceSymbolEventCh chan *binancesdk.WsBookTickerEvent,
 	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent,
 	mexcSymbolEventCh chan *mexc.WsBookTickerEvent,
-	binanceWsReqCh chan *binance.WsApiRequest,
 ) {
 
 	var (
@@ -407,8 +407,8 @@ func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decim
 			status,
 			t.mode.Load(),
 			stableSymbolPrice,
-			taPrice,
 			tbPrice,
+			taPrice,
 			ratio.Mul(decimal.NewFromFloat(10000)).String(),
 		),
 	)
