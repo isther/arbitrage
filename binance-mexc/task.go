@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -275,6 +276,7 @@ func (t *Task) close(
 			// Trade
 			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
 			t.mode.Store(0)
+			os.Exit(-1)
 		}
 	case 2:
 		// 做模式1
@@ -287,8 +289,8 @@ func (t *Task) close(
 
 			// Trade
 			t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
-
 			t.mode.Store(0)
+			os.Exit(-1)
 		}
 	}
 
