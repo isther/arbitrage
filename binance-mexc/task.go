@@ -198,7 +198,8 @@ func (t *Task) openMode1(
 		} else {
 			t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
 		}
-		return true, ratioMode1, stableSymbolBidPrice
+		stableSymbolAskPrice, _ := decimal.NewFromString(stableCoinSymbolEvent.BestAskPrice)
+		return true, ratioMode1, stableSymbolAskPrice
 	}
 	return false, decimal.Zero, decimal.Zero
 }
@@ -239,7 +240,8 @@ func (t *Task) openMode2(
 		} else {
 			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
 		}
-		return true, ratioMode2, stableSymbolAskPrice
+		stableSymbolBidPrice, _ := decimal.NewFromString(stableCoinSymbolEvent.BestBidPrice)
+		return true, ratioMode2, stableSymbolBidPrice
 	}
 
 	return false, decimal.Zero, decimal.Zero
