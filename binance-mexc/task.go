@@ -370,7 +370,6 @@ func (t *Task) tradeMode2(binanceWsReqCh chan *binance.WsApiRequest, binanceQty,
 	}()
 
 	wg.Wait()
-	log.Println("Trade mode2 end")
 }
 
 func (t *Task) calculateRatioMode1(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) decimal.Decimal {
