@@ -1,10 +1,14 @@
 package binancemexc
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
@@ -26,12 +30,14 @@ type Task struct {
 	stableCoinSymbolEvent *binancesdk.WsBookTickerEvent
 	mexcSymbolEvent       *mexc.WsBookTickerEvent
 
-	MinMinRatio decimal.Decimal
-	MinRatio    decimal.Decimal
-	MaxRatio    decimal.Decimal
+	MinRatio decimal.Decimal
+	MaxRatio decimal.Decimal
+	Ratio    decimal.Decimal
 
 	stopCh chan struct{}
-	L      sync.RWMutex
+
+	mode atomic.Int32
+	L    sync.RWMutex
 }
 
 func NewArbitrageTask(
@@ -59,124 +65,119 @@ func (t *Task) run(
 	mexcSymbolEventCh chan *mexc.WsBookTickerEvent,
 	binanceWsReqCh chan *binance.WsApiRequest,
 ) {
+
+	var (
+		ratio             decimal.Decimal
+		stableSymbolPrice decimal.Decimal
+		trade             = func() {
+			stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
+			mexcEvent := t.mexcSymbolEvent
+			if stableEvent == nil || binanceEvent == nil || mexcEvent == nil {
+				log.Println("Get nil event")
+				return
+			}
+			if mexcEvent.Data.AskPrice == "" {
+				log.Println("Get null mexc event")
+				return
+			}
+
+			switch t.mode.Load() {
+			case 0: // Open
+				ratio, stableSymbolPrice = t.open(binanceWsReqCh, binanceEvent, stableEvent, mexcEvent)
+			case 1, 2:
+				t.close(binanceWsReqCh, ratio, stableSymbolPrice, binanceEvent, mexcEvent)
+			}
+		}
+		getCtx = func() (context.Context, context.CancelFunc) {
+			return context.WithTimeout(context.Background(), 1000*time.Second)
+		}
+		ctx, cancel = getCtx()
+	)
+
 	for {
 		select {
 		case binanceSymbolEvent := <-binanceSymbolEventCh:
 			go func() {
-				if t.L.TryLock() {
-					defer t.L.Unlock()
-					t.binanceSymbolEvent = binanceSymbolEvent
-					t.Trade(binanceWsReqCh)
-				} else {
-					log.Println("Wait")
+				switch t.L.TryLock() {
+				case true:
+					{
+						defer t.L.Unlock()
+						t.binanceSymbolEvent = binanceSymbolEvent
+					}
 				}
 			}()
 		case stableCoinSymbolEvent := <-stableCoinSymbolEventCh:
 			go func() {
-				if t.L.TryLock() {
-					defer t.L.Unlock()
-					t.stableCoinSymbolEvent = stableCoinSymbolEvent
-					t.Trade(binanceWsReqCh)
-				} else {
-					log.Println("Wait")
+				switch t.L.TryLock() {
+				case true:
+					{
+						defer t.L.Unlock()
+						t.stableCoinSymbolEvent = stableCoinSymbolEvent
+					}
 				}
 			}()
 		case mexcSymbolEvent := <-mexcSymbolEventCh:
 			go func() {
-				if t.L.TryLock() {
-					defer t.L.Unlock()
-					t.mexcSymbolEvent = mexcSymbolEvent
-					t.Trade(binanceWsReqCh)
-				} else {
-					log.Println("Wait")
+				switch t.L.TryLock() {
+				case true:
+					{
+						defer t.L.Unlock()
+						t.mexcSymbolEvent = mexcSymbolEvent
+					}
 				}
 			}()
+		case <-ctx.Done():
+			cancel()
+			ctx, cancel = getCtx()
+			t.mode.Store(0)
 		case <-t.stopCh:
 			log.Println("Stop")
 			return
+		default:
+			go func() {
+				if t.L.TryLock() {
+					defer t.L.Unlock()
+					trade()
+				}
+			}()
 		}
 	}
 }
 
-func (t *Task) Trade(binanceWsReqCh chan *binance.WsApiRequest) {
-	stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
-	mexcEvent := t.mexcSymbolEvent
-	if stableEvent == nil || binanceEvent == nil || mexcEvent == nil {
-		log.Println("Get nil event")
-		return
+// 开仓
+func (t *Task) open(
+	binanceWsReqCh chan *binance.WsApiRequest,
+	binanceSymbolEvent *binancesdk.WsBookTickerEvent,
+	stableCoinSymbolEvent *binancesdk.WsBookTickerEvent,
+	mexcSymbolEvent *mexc.WsBookTickerEvent,
+) (decimal.Decimal, decimal.Decimal) {
+
+	if ok, ratio, stableSymbolPrice := t.openMode1(binanceWsReqCh, binanceSymbolEvent, stableCoinSymbolEvent, mexcSymbolEvent); ok {
+		return ratio, stableSymbolPrice
+	} else if ok, ratio, stableSymbolPrice := t.openMode2(binanceWsReqCh, binanceSymbolEvent, stableCoinSymbolEvent, mexcSymbolEvent); ok {
+		return ratio, stableSymbolPrice
 	}
-	if mexcEvent.Data.AskPrice == "" {
-		log.Println("Get null mexc event")
-		return
-	}
 
-	// Price
-	// AskPrice: Minimum sell pice | 卖1
-	// BidPrice: Maximum buy price | 买1
+	return decimal.Zero, decimal.Zero
+}
 
-	// （1除以tusd/usdt区的卖1价）减去（btc/tusd区卖1价除以btc/usdt区买1价）大于万0.7 小于万1.5
-	stableSymbolAskPrice, _ := decimal.NewFromString(stableEvent.BestAskPrice)
-	binanceSymbolAskPrice, _ := decimal.NewFromString(binanceEvent.BestAskPrice)
-	mexcSymbolBidPrice, _ := decimal.NewFromString(mexcEvent.Data.BidPrice)
-	if t.judgeRatio(false, binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice) {
-		var (
-			doneBinanceCh = make(chan struct{})
-			doneMexcCh    = make(chan struct{})
-		)
-		// 币安把TUSD买入为BTC、抹茶把BTC卖出为USDT；
-		// stableSymbolAskQty, _ := decimal.NewFromString(stableEvent.BestAskQty)   // TUSDUSDT
-		// binanceSymbolAskQty, _ := decimal.NewFromString(binanceEvent.BestAskQty) // BTCTUSD
-		// mexcSymbolBidQty, _ := decimal.NewFromString(mexcEvent.Data.BidQty)      // BTCUSDT
+// 模式1
+// （tusd/usdt区的买1价）减去（btc/usdt区卖1价除以btc/tusd区买1价）大于万0.7 小于万1.5
+func (t *Task) openMode1(
+	binanceWsReqCh chan *binance.WsApiRequest,
+	binanceSymbolEvent,
+	stableCoinSymbolEvent *binancesdk.WsBookTickerEvent,
+	mexcSymbolEvent *mexc.WsBookTickerEvent,
+) (bool, decimal.Decimal, decimal.Decimal) {
+	// Prepare price
+	stableSymbolBidPrice, _ := decimal.NewFromString(stableCoinSymbolEvent.BestBidPrice)
+	mexcSymbolAskPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.AskPrice)
+	binanceSymbolBidPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestBidPrice)
 
-		// stabldToAQty := stableSymbolAskQty
-		// binanceToAQty := binanceSymbolAskQty.Mul(binanceSymbolAskPrice)
-		// mexcToAQty := mexcSymbolBidQty.Mul(mexcSymbolBidPrice).Div(stableSymbolAskPrice)
-
-		// Quantity
-		// aQty := decimal.Min(stabldToAQty, binanceToAQty, mexcToAQty, decimal.NewFromFloat(11.0))
-		// aQty = decimal.Max(aQty, decimal.NewFromFloat(11.0))
-
-		// Trade binance
-		go func() {
-			t.getOrderBinanceTrade(
-				t.symbolPairs.BinanceSymbol,
-				binance.SideTypeBuy,
-				// aQty.Div(binanceSymbolAskPrice).String(),
-				"0.0004",
-			)
-
-			doneBinanceCh <- struct{}{}
-		}()
-
-		// Trade mexc
-		go func() {
-			res, err := mexc.MexcBTCSell(
-				config.Config.MexcCookie,
-				mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(),
-				// aQty.Mul(stableSymbolAskPrice).Div(mexcSymbolBidPrice).String(),
-				"0.0004",
-			)
-			if err != nil {
-				log.Println("mexc trade error", err)
-			}
-
-			log.Println("mexc trade", res)
-			doneMexcCh <- struct{}{}
-		}()
-
-		<-doneBinanceCh
-		<-doneMexcCh
-		os.Exit(0)
-	}
-	// （tusd/usdt区的买1价）减去（btc/usdt区卖1价除以btc/tusd区买1价）大于万0.7 小于万1.5
-	stableSymbolBidPrice, _ := decimal.NewFromString(stableEvent.BestBidPrice)
-	mexcSymbolAskPrice, _ := decimal.NewFromString(mexcEvent.Data.AskPrice)
-	binanceSymbolBidPrice, _ := decimal.NewFromString(binanceEvent.BestBidPrice)
-	if t.judgeRatio(true, binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice) {
-		var (
-			doneBinanceCh = make(chan struct{})
-			doneMexcCh    = make(chan struct{})
-		)
+	ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
+	if ratioMode1.GreaterThanOrEqual(t.MinRatio) && ratioMode1.LessThanOrEqual(t.MaxRatio) {
+		t.mode.Store(1)
+		t.ratioLog(ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
 		// 币安把BTC卖出为TUSD、抹茶把USDT买入为BTC；
 		// stableSymbolBidQty, _ := decimal.NewFromString(stableEvent.BestBidQty)   // TUSDUSDT
 		// mexcSymbolAskQty, _ := decimal.NewFromString(mexcEvent.Data.AskQty)      // BTCUSDT
@@ -191,96 +192,196 @@ func (t *Task) Trade(binanceWsReqCh chan *binance.WsApiRequest) {
 		// aQty = decimal.Max(aQty, decimal.NewFromFloat(11.0))
 
 		// Trade binance
-		go func() {
-			binanceWsReqCh <- t.getOrderBinanceTrade(
-				t.symbolPairs.BinanceSymbol,
-				binance.SideTypeSell,
-				// aQty.Div(binanceSymbolBidPrice).String(),
-				"0.0004",
-			)
+		if TestTrade {
 
-			doneBinanceCh <- struct{}{}
-		}()
-
-		// Trade mexc
-		go func() {
-			res, err := mexc.MexcBTCBuy(
-				config.Config.MexcCookie,
-				mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(),
-				// aQty.Mul(stableSymbolBidPrice).Div(mexcSymbolAskPrice).String(),
-				"0.0004",
-			)
-			if err != nil {
-				log.Println("mexc trade error", err)
-			}
-
-			log.Println("mexc trade", res)
-			doneMexcCh <- struct{}{}
-
-		}()
-
-		<-doneBinanceCh
-		<-doneMexcCh
-		os.Exit(0)
+		} else {
+			t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
+		}
+		return true, ratioMode1, stableSymbolBidPrice
 	}
+	return false, decimal.Zero, decimal.Zero
 }
 
-// forward and reverse
-func (t *Task) judgeRatio(reverse bool, taPrice, tbPrice, stableSymbolPrice decimal.Decimal) bool {
-	var (
-		ratio decimal.Decimal
-		mod   = 0
+// 模式2
+// （1除以tusd/usdt区的卖1价）减去（btc/tusd区卖1价除以btc/usdt区买1价）大于万0.7 小于万1.5
+func (t *Task) openMode2(
+	binanceWsReqCh chan *binance.WsApiRequest,
+	binanceSymbolEvent,
+	stableCoinSymbolEvent *binancesdk.WsBookTickerEvent,
+	mexcSymbolEvent *mexc.WsBookTickerEvent,
+) (bool, decimal.Decimal, decimal.Decimal) {
+	// Prepare price
+	stableSymbolAskPrice, _ := decimal.NewFromString(stableCoinSymbolEvent.BestAskPrice)
+	binanceSymbolAskPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestAskPrice)
+	mexcSymbolBidPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.BidPrice)
 
-		ratioLog = func() {
-			log.Println(
-				fmt.Sprintf(
-					"[Mode%d] TUSD/USDT: %s BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
-					mod,
-					stableSymbolPrice,
-					taPrice,
-					tbPrice,
-					ratio.Mul(decimal.NewFromFloat(10000)).String(),
-				),
-			)
+	ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
+	if ratioMode2.GreaterThanOrEqual(t.MinRatio) && ratioMode2.LessThanOrEqual(t.MaxRatio) {
+		t.mode.Store(2)
+		t.ratioLog(ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
+		// 币安把TUSD买入为BTC、抹茶把BTC卖出为USDT；
+		// stableSymbolAskQty, _ := decimal.NewFromString(stableEvent.BestAskQty)   // TUSDUSDT
+		// binanceSymbolAskQty, _ := decimal.NewFromString(binanceEvent.BestAskQty) // BTCTUSD
+		// mexcSymbolBidQty, _ := decimal.NewFromString(mexcEvent.Data.BidQty)      // BTCUSDT
+
+		// stabldToAQty := stableSymbolAskQty
+		// binanceToAQty := binanceSymbolAskQty.Mul(binanceSymbolAskPrice)
+		// mexcToAQty := mexcSymbolBidQty.Mul(mexcSymbolBidPrice).Div(stableSymbolAskPrice)
+
+		// Quantity
+		// aQty := decimal.Min(stabldToAQty, binanceToAQty, mexcToAQty, decimal.NewFromFloat(11.0))
+		// aQty = decimal.Max(aQty, decimal.NewFromFloat(11.0))
+
+		// Trade binance
+		if TestTrade {
+
+		} else {
+			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.004")
 		}
+		return true, ratioMode2, stableSymbolAskPrice
+	}
+
+	return false, decimal.Zero, decimal.Zero
+}
+
+// 平仓
+func (t *Task) close(
+	binanceWsReqCh chan *binance.WsApiRequest,
+	ratio,
+	stableSymbolPrice decimal.Decimal,
+	binanceSymbolEvent *binancesdk.WsBookTickerEvent,
+	mexcSymbolEvent *mexc.WsBookTickerEvent,
+) {
+	switch t.mode.Load() {
+	case 1:
+		// 做模式2
+		ratio = decimal.NewFromFloat(-1).Sub(ratio).Add(t.Ratio)
+		binanceSymbolAskPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestAskPrice)
+		mexcSymbolBidPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.BidPrice)
+
+		if t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolPrice).GreaterThanOrEqual(ratio) {
+			// Trade
+			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
+		}
+	case 2:
+		// 做模式1
+		ratio = decimal.NewFromFloat(-1).Sub(ratio).Add(t.Ratio)
+		mexcSymbolAskPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.AskPrice)
+		binanceSymbolBidPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestBidPrice)
+
+		if t.calculateRatioMode1(binanceSymbolBidPrice, stableSymbolPrice, mexcSymbolAskPrice).GreaterThanOrEqual(ratio) {
+			// Trade
+			t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
+		}
+	}
+	os.Exit(0)
+}
+
+func (t *Task) tradeMode1(binanceWsReqCh chan *binance.WsApiRequest, binanceQty, mexcPrice, mexcQty string) {
+	var wg sync.WaitGroup
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		binanceWsReqCh <- t.getOrderBinanceTrade(
+			t.symbolPairs.BinanceSymbol,
+			binance.SideTypeSell,
+			binanceQty,
+		)
+	}()
+
+	// Trade mexc
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		res, err := mexc.MexcBTCBuy(
+			config.Config.MexcCookie,
+			mexcPrice,
+			mexcQty,
+		)
+		if err != nil {
+			log.Println("mexc trade error", err)
+		}
+
+		log.Println("mexc trade", res)
+	}()
+
+	wg.Wait()
+}
+
+func (t *Task) tradeMode2(binanceWsReqCh chan *binance.WsApiRequest, binanceQty, mexcPrice, mexcQty string) {
+	var wg sync.WaitGroup
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		binanceWsReqCh <- t.getOrderBinanceTrade(
+			t.symbolPairs.BinanceSymbol,
+			binance.SideTypeBuy,
+			binanceQty,
+		)
+	}()
+
+	// Trade mexc
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
+		if res, err := mexc.MexcBTCSell(
+			config.Config.MexcCookie,
+			mexcPrice,
+			mexcQty,
+		); err != nil {
+			log.Println("mexc trade error", err)
+		} else {
+			log.Println("mexc trade", res)
+		}
+	}()
+
+	wg.Wait()
+}
+
+func (t *Task) calculateRatioMode1(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) decimal.Decimal {
+	return decimal.NewFromFloat32(1).Div(stableSymbolPrice).
+		Sub(
+			tbPrice.Div(taPrice),
+		)
+}
+
+func (t *Task) calculateRatioMode2(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) decimal.Decimal {
+	return decimal.NewFromFloat32(1).Div(stableSymbolPrice).
+		Sub(
+			taPrice.Div(
+				tbPrice,
+			),
+		)
+}
+
+func (t *Task) ratioLog(ratio, taPrice, tbPrice, stableSymbolPrice decimal.Decimal) {
+	log.Println(
+		fmt.Sprintf(
+			"[Mode%d] TUSD/USDT: %s BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
+			t.mode.Load(),
+			stableSymbolPrice,
+			taPrice,
+			tbPrice,
+			ratio.Mul(decimal.NewFromFloat(10000)).String(),
+		),
 	)
-	log.SetFlags(log.Ldate | log.Lmicroseconds)
 
-	if !reverse {
-		mod = 2
-		ratio = decimal.NewFromFloat32(1).Div(stableSymbolPrice).
-			Sub(
-				taPrice.Div(
-					tbPrice,
-				),
-			)
-	} else {
-		mod = 1
-		ratio = stableSymbolPrice.
-			Sub(
-				tbPrice.Div(
-					taPrice,
-				),
-			)
-	}
-
-	if 0 <= ratio.Cmp(t.MinRatio) && ratio.Cmp(t.MaxRatio) <= 0 {
-		ratioLog()
-		return true
-	}
-	return false
 }
 
 func (t *Task) getOrderBinanceTrade(symbol string, side binance.SideType, qty string) *binance.WsApiRequest {
 	params := binance.NewOrderTradeParmes(t.binanceApiKey).
 		NewOrderRespType(binance.NewOrderRespTypeRESULT).
-		TimeInForce(binance.TimeInForceTypeGTC). // 在服务器上请注释这行
 		Symbol(symbol).Side(side).
-		OrderType(binance.OrderTypeMarket).Quantity(qty).
-		Signature(t.binanceSecretKey)
+		OrderType(binance.OrderTypeMarket).Quantity(qty)
 
-	if TestTrade {
-		return binance.NewOrderTradeTest(params)
+	if runtime.GOOS == "linux" {
+		params.TimeInForce(binance.TimeInForceTypeGTC)
 	}
-	return binance.NewOrderTrade(params)
+
+	return binance.NewOrderTrade(params.
+		Signature(t.binanceSecretKey))
 }
