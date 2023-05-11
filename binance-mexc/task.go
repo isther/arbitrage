@@ -262,7 +262,7 @@ func (t *Task) close(
 	switch t.mode.Load() {
 	case 1:
 		// 做模式2
-		ratio = decimal.NewFromFloat(-1).Sub(ratio).Add(t.Ratio)
+		ratio = decimal.NewFromFloat(-0.0001).Sub(ratio).Add(t.Ratio)
 		binanceSymbolAskPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestAskPrice)
 		mexcSymbolBidPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.BidPrice)
 
@@ -277,7 +277,7 @@ func (t *Task) close(
 		}
 	case 2:
 		// 做模式1
-		ratio = decimal.NewFromFloat(-1).Sub(ratio).Add(t.Ratio)
+		ratio = decimal.NewFromFloat(-0.0001).Sub(ratio).Add(t.Ratio)
 		mexcSymbolAskPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.AskPrice)
 		binanceSymbolBidPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestBidPrice)
 
