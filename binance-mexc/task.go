@@ -407,8 +407,8 @@ func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decim
 			status,
 			t.mode.Load(),
 			stableSymbolPrice,
-			tbPrice,
 			taPrice,
+			tbPrice,
 			ratio.Mul(decimal.NewFromFloat(10000)).String(),
 		),
 	)
