@@ -373,7 +373,7 @@ func (t *Task) tradeMode2(binanceWsReqCh chan *binance.WsApiRequest, binanceQty,
 }
 
 func (t *Task) calculateRatioMode1(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) decimal.Decimal {
-	return decimal.NewFromFloat32(1).Div(stableSymbolPrice).
+	return stableSymbolPrice.
 		Sub(
 			tbPrice.Div(taPrice),
 		)
