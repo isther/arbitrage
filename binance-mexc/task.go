@@ -179,7 +179,7 @@ func (t *Task) openMode1(
 	ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
 	if ratioMode1.GreaterThanOrEqual(t.MinRatio) && ratioMode1.LessThanOrEqual(t.MaxRatio) {
 		t.mode.Store(1)
-		t.ratioLog(ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
+		t.ratioLog(true, ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
 		// 币安把BTC卖出为TUSD、抹茶把USDT买入为BTC；
 		// stableSymbolBidQty, _ := decimal.NewFromString(stableEvent.BestBidQty)   // TUSDUSDT
 		// mexcSymbolAskQty, _ := decimal.NewFromString(mexcEvent.Data.AskQty)      // BTCUSDT
@@ -220,7 +220,7 @@ func (t *Task) openMode2(
 	ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
 	if ratioMode2.GreaterThanOrEqual(t.MinRatio) && ratioMode2.LessThanOrEqual(t.MaxRatio) {
 		t.mode.Store(2)
-		t.ratioLog(ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
+		t.ratioLog(true, ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
 		// 币安把TUSD买入为BTC、抹茶把BTC卖出为USDT；
 		// stableSymbolAskQty, _ := decimal.NewFromString(stableEvent.BestAskQty)   // TUSDUSDT
 		// binanceSymbolAskQty, _ := decimal.NewFromString(binanceEvent.BestAskQty) // BTCTUSD
@@ -262,7 +262,7 @@ func (t *Task) close(
 		mexcSymbolBidPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.BidPrice)
 
 		if ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolPrice); ratioMode2.GreaterThanOrEqual(ratio) {
-			t.ratioLog(ratioMode2, stableSymbolPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
+			t.ratioLog(false, ratioMode2, stableSymbolPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
 
 			// Trade
 			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
@@ -275,7 +275,7 @@ func (t *Task) close(
 		binanceSymbolBidPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestBidPrice)
 
 		if ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, stableSymbolPrice, mexcSymbolAskPrice); ratioMode1.GreaterThanOrEqual(ratio) {
-			t.ratioLog(ratioMode1, stableSymbolPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
+			t.ratioLog(false, ratioMode1, stableSymbolPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
 
 			// Trade
 			t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
@@ -373,10 +373,17 @@ func (t *Task) calculateRatioMode2(taPrice, tbPrice, stableSymbolPrice decimal.D
 		)
 }
 
-func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decimal) {
+func (t *Task) ratioLog(open bool, ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decimal) {
+	var status string
+	if open {
+		status = "Open"
+	} else {
+		status = "Close"
+	}
 	log.Println(
 		fmt.Sprintf(
-			"[Mode%d] TUSD/USDT: %s BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
+			"Status: %s [Mode%d] TUSD/USDT: %s BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
+			status,
 			t.mode.Load(),
 			stableSymbolPrice,
 			taPrice,
@@ -393,10 +400,9 @@ func (t *Task) getOrderBinanceTrade(symbol string, side binance.SideType, qty st
 		Symbol(symbol).Side(side).
 		OrderType(binance.OrderTypeMarket).Quantity(qty)
 
-	log.Println("GOOS", runtime.GOOS)
-	// if runtime.GOOS == "linux" {
-	// params.TimeInForce(binance.TimeInForceTypeGTC)
-	// }
+	if runtime.GOOS != "linux" {
+		params.TimeInForce(binance.TimeInForceTypeGTC)
+	}
 
 	return binance.NewOrderTrade(params.
 		Signature(t.binanceSecretKey))
