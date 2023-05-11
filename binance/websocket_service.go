@@ -136,7 +136,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 
 			msgC <- msg
 			w.events[wsApiRequest.ID] = wsApiRequest.Method
-			log.Println("Send wsApiRequest successfully: ", wsApiRequest)
+			// log.Println("Send wsApiRequest successfully: ", wsApiRequest)
 		}
 	}()
 
