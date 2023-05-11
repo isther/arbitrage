@@ -23,7 +23,7 @@ func TestArbitrageTask(t *testing.T) {
 			config.Config.MexcApiKey,
 			config.Config.MexcSecretKey,
 			symbolPair,
-			0,
+			0.00003,
 			0.00007,
 			0.00015,
 		),

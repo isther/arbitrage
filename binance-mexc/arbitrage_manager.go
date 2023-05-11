@@ -1,7 +1,6 @@
 package binancemexc
 
 import (
-	"fmt"
 	"log"
 	"sync"
 
@@ -74,13 +73,14 @@ func (b *ArbitrageManager) Run() {
 			// b.wsRequestCh, b.wsResponseCh, doneC, stopC = b.websocketApiServiceManager.StartWsApi(
 			_, _ = b.websocketApiServiceManager.StartWsApi(
 				func(msg []byte) {
-					wsApiEvent, method, err := b.websocketApiServiceManager.ParseWsApiEvent(msg)
+					// wsApiEvent, method, err := b.websocketApiServiceManager.ParseWsApiEvent(msg)
+					_, _, err := b.websocketApiServiceManager.ParseWsApiEvent(msg)
 					if err != nil {
 						log.Println("[ERROR] Failed to parse wsApiEvent:", err)
 						return
 					}
 
-					log.Println(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+					// log.Println(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
 				},
 				func(err error) {
 					restartCh <- struct{}{}
