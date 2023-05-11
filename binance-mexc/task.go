@@ -282,6 +282,8 @@ func (t *Task) close(
 			t.mode.Store(0)
 		}
 	}
+
+	time.Sleep(1 * time.Second)
 	os.Exit(0)
 }
 
