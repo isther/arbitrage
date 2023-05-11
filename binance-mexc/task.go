@@ -73,11 +73,11 @@ func (t *Task) run(
 			stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
 			mexcEvent := t.mexcSymbolEvent
 			if stableEvent == nil || binanceEvent == nil || mexcEvent == nil {
-				log.Println("Get nil event")
+				// log.Println("Get nil event")
 				return
 			}
 			if mexcEvent.Data.AskPrice == "" {
-				log.Println("Get null mexc event")
+				// log.Println("Get null mexc event")
 				return
 			}
 
