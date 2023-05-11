@@ -155,11 +155,11 @@ func (t *Task) open(
 
 	if ok, ratio, stableSymbolPrice := t.openMode1(binanceWsReqCh, binanceSymbolEvent, stableCoinSymbolEvent, mexcSymbolEvent); ok {
 		t.isOpen.Store(false)
-		log.Println("-------------->mode2 平仓")
+		log.Println("--------------> Mode2 平仓")
 		return ratio, stableSymbolPrice
 	} else if ok, ratio, stableSymbolPrice := t.openMode2(binanceWsReqCh, binanceSymbolEvent, stableCoinSymbolEvent, mexcSymbolEvent); ok {
 		t.isOpen.Store(false)
-		log.Println("-------------->mode1 平仓")
+		log.Println("--------------> Mode1 平仓")
 		return ratio, stableSymbolPrice
 	}
 
@@ -319,16 +319,15 @@ func (t *Task) tradeMode1(binanceWsReqCh chan *binance.WsApiRequest, binanceQty,
 		wg.Add(1)
 		defer wg.Done()
 
-		res, err := mexc.MexcBTCBuy(
+		if _, err := mexc.MexcBTCBuy(
 			config.Config.MexcCookie,
 			mexcPrice,
 			mexcQty,
-		)
-		if err != nil {
+		); err != nil {
 			log.Println("mexc trade error", err)
+		} else {
+			// log.Println("mexc trade", res)
 		}
-
-		log.Println("mexc trade", res)
 	}()
 
 	wg.Wait()
@@ -359,14 +358,14 @@ func (t *Task) tradeMode2(binanceWsReqCh chan *binance.WsApiRequest, binanceQty,
 		wg.Add(1)
 		defer wg.Done()
 
-		if res, err := mexc.MexcBTCSell(
+		if _, err := mexc.MexcBTCSell(
 			config.Config.MexcCookie,
 			mexcPrice,
 			mexcQty,
 		); err != nil {
 			log.Println("mexc trade error", err)
 		} else {
-			log.Println("mexc trade", res)
+			// log.Println("mexc trade", res)
 		}
 	}()
 
