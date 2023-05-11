@@ -35,8 +35,9 @@ type Task struct {
 
 	stopCh chan struct{}
 
-	mode atomic.Int32
-	L    sync.RWMutex
+	isOpen atomic.Bool
+	mode   atomic.Int32
+	L      sync.RWMutex
 }
 
 func NewArbitrageTask(
@@ -83,6 +84,7 @@ func (t *Task) run(
 
 			switch t.mode.Load() {
 			case 0: // Open
+				t.isOpen.Store(true)
 				ratio, stableSymbolPrice = t.open(binanceWsReqCh, binanceEvent, stableEvent, mexcEvent)
 			case 1, 2:
 				t.close(binanceWsReqCh, ratio, stableSymbolPrice, binanceEvent, mexcEvent)
@@ -95,6 +97,7 @@ func (t *Task) run(
 	)
 
 	t.mode.Store(0)
+	t.isOpen.Store(true)
 	for {
 		select {
 		case binanceSymbolEvent := <-binanceSymbolEventCh:
@@ -154,8 +157,12 @@ func (t *Task) open(
 ) (decimal.Decimal, decimal.Decimal) {
 
 	if ok, ratio, stableSymbolPrice := t.openMode1(binanceWsReqCh, binanceSymbolEvent, stableCoinSymbolEvent, mexcSymbolEvent); ok {
+		t.isOpen.Store(false)
+		log.Println("-------------->mode2 平仓")
 		return ratio, stableSymbolPrice
 	} else if ok, ratio, stableSymbolPrice := t.openMode2(binanceWsReqCh, binanceSymbolEvent, stableCoinSymbolEvent, mexcSymbolEvent); ok {
+		t.isOpen.Store(false)
+		log.Println("-------------->mode1 平仓")
 		return ratio, stableSymbolPrice
 	}
 
@@ -178,7 +185,7 @@ func (t *Task) openMode1(
 	ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
 	if ratioMode1.GreaterThanOrEqual(t.MinRatio) && ratioMode1.LessThanOrEqual(t.MaxRatio) {
 		t.mode.Store(1)
-		t.ratioLog(true, ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
+		t.ratioLog(ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
 		// 币安把BTC卖出为TUSD、抹茶把USDT买入为BTC；
 		// stableSymbolBidQty, _ := decimal.NewFromString(stableEvent.BestBidQty)   // TUSDUSDT
 		// mexcSymbolAskQty, _ := decimal.NewFromString(mexcEvent.Data.AskQty)      // BTCUSDT
@@ -220,7 +227,7 @@ func (t *Task) openMode2(
 	ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
 	if ratioMode2.GreaterThanOrEqual(t.MinRatio) && ratioMode2.LessThanOrEqual(t.MaxRatio) {
 		t.mode.Store(2)
-		t.ratioLog(true, ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
+		t.ratioLog(ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
 		// 币安把TUSD买入为BTC、抹茶把BTC卖出为USDT；
 		// stableSymbolAskQty, _ := decimal.NewFromString(stableEvent.BestAskQty)   // TUSDUSDT
 		// binanceSymbolAskQty, _ := decimal.NewFromString(binanceEvent.BestAskQty) // BTCTUSD
@@ -263,7 +270,7 @@ func (t *Task) close(
 		mexcSymbolBidPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.BidPrice)
 
 		if ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolPrice); ratioMode2.GreaterThanOrEqual(ratio) {
-			t.ratioLog(false, ratioMode2, stableSymbolPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
+			t.ratioLog(ratioMode2, stableSymbolPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
 
 			// Trade
 			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
@@ -276,7 +283,7 @@ func (t *Task) close(
 		binanceSymbolBidPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestBidPrice)
 
 		if ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, stableSymbolPrice, mexcSymbolAskPrice); ratioMode1.GreaterThanOrEqual(ratio) {
-			t.ratioLog(false, ratioMode1, stableSymbolPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
+			t.ratioLog(ratioMode1, stableSymbolPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
 
 			// Trade
 			t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
@@ -289,7 +296,14 @@ func (t *Task) close(
 }
 
 func (t *Task) tradeMode1(binanceWsReqCh chan *binance.WsApiRequest, binanceQty, mexcPrice, mexcQty string) {
-	log.Println("Trade mode1 start")
+	if t.isOpen.Load() {
+		log.Println("Open trade mode1 start")
+		defer log.Println("Open trade mode1 end")
+	} else {
+		log.Println("Close trade mode1 start")
+		defer log.Println("Close trade mode1 end")
+	}
+
 	var wg sync.WaitGroup
 	go func() {
 		wg.Add(1)
@@ -320,11 +334,16 @@ func (t *Task) tradeMode1(binanceWsReqCh chan *binance.WsApiRequest, binanceQty,
 	}()
 
 	wg.Wait()
-	log.Println("Trade mode1 end")
 }
 
 func (t *Task) tradeMode2(binanceWsReqCh chan *binance.WsApiRequest, binanceQty, mexcPrice, mexcQty string) {
-	log.Println("Trade mode2 start")
+	if t.isOpen.Load() {
+		log.Println("Open trade mode2 start")
+		defer log.Println("Open trade mode2 end")
+	} else {
+		log.Println("Close with trade mode2 start")
+		defer log.Println("Close with 2rade mode2 end")
+	}
 	var wg sync.WaitGroup
 	go func() {
 		wg.Add(1)
@@ -373,9 +392,9 @@ func (t *Task) calculateRatioMode2(taPrice, tbPrice, stableSymbolPrice decimal.D
 		)
 }
 
-func (t *Task) ratioLog(open bool, ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decimal) {
+func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decimal) {
 	var status string
-	if open {
+	if t.isOpen.Load() {
 		status = "Open"
 	} else {
 		status = "Close"
