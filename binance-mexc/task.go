@@ -137,6 +137,24 @@ func (t *Task) run(
 		case <-ctx.Done():
 			cancel()
 			ctx, cancel = getCtx()
+			switch t.mode.Load() {
+			case 1:
+				go func() {
+					t.L.Lock()
+					defer t.L.Unlock()
+
+					mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+					t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
+				}()
+			case 2:
+				go func() {
+					t.L.Lock()
+					defer t.L.Unlock()
+
+					mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
+					t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
+				}()
+			}
 			t.mode.Store(0)
 		case <-t.stopCh:
 			log.Println("Stop")
@@ -319,14 +337,14 @@ func (t *Task) tradeMode1(binanceWsReqCh chan *binance.WsApiRequest, binanceQty,
 		wg.Add(1)
 		defer wg.Done()
 
-		if _, err := mexc.MexcBTCBuy(
+		if res, err := mexc.MexcBTCBuy(
 			config.Config.MexcCookie,
 			mexcPrice,
 			mexcQty,
 		); err != nil {
 			log.Println("mexc trade error", err)
 		} else {
-			// log.Println("mexc trade", res)
+			log.Println("mexc trade", res)
 		}
 	}()
 
@@ -358,14 +376,14 @@ func (t *Task) tradeMode2(binanceWsReqCh chan *binance.WsApiRequest, binanceQty,
 		wg.Add(1)
 		defer wg.Done()
 
-		if _, err := mexc.MexcBTCSell(
+		if res, err := mexc.MexcBTCSell(
 			config.Config.MexcCookie,
 			mexcPrice,
 			mexcQty,
 		); err != nil {
 			log.Println("mexc trade error", err)
 		} else {
-			// log.Println("mexc trade", res)
+			log.Println("mexc trade", res)
 		}
 	}()
 
