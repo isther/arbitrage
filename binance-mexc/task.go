@@ -78,6 +78,8 @@ func (t *Task) run(
 
 	t.mode.Store(0)
 	t.isOpen.Store(true)
+	go t.trade(binanceWsReqCh)
+
 	for {
 		select {
 		case binanceSymbolEvent := <-binanceSymbolEventCh:
