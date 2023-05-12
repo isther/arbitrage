@@ -69,12 +69,6 @@ func (t *Task) run(
 	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent,
 	mexcSymbolEventCh chan *mexc.WsBookTickerEvent,
 ) {
-	log.Printf("Start task: MinRatio: %s, MaxRatio: %s, ProfitRatio: %s, CloseTimeOut: %v\n",
-		t.minRatio,
-		t.maxRatio,
-		t.profitRatio,
-		config.Config.CloseTimeOut,
-	)
 
 	t.mode.Store(0)
 	t.isOpen.Store(true)
@@ -83,34 +77,22 @@ func (t *Task) run(
 	for {
 		select {
 		case binanceSymbolEvent := <-binanceSymbolEventCh:
-			go func() {
-				switch t.L.TryLock() {
-				case true:
-					{
-						defer t.L.Unlock()
-						t.binanceSymbolEvent = binanceSymbolEvent
-					}
-				}
+			func() {
+				t.L.Lock()
+				defer t.L.Unlock()
+				t.binanceSymbolEvent = binanceSymbolEvent
 			}()
 		case stableCoinSymbolEvent := <-stableCoinSymbolEventCh:
-			go func() {
-				switch t.L.TryLock() {
-				case true:
-					{
-						defer t.L.Unlock()
-						t.stableCoinSymbolEvent = stableCoinSymbolEvent
-					}
-				}
+			func() {
+				t.L.Lock()
+				defer t.L.Unlock()
+				t.stableCoinSymbolEvent = stableCoinSymbolEvent
 			}()
 		case mexcSymbolEvent := <-mexcSymbolEventCh:
-			go func() {
-				switch t.L.TryLock() {
-				case true:
-					{
-						defer t.L.Unlock()
-						t.mexcSymbolEvent = mexcSymbolEvent
-					}
-				}
+			func() {
+				t.L.Lock()
+				defer t.L.Unlock()
+				t.mexcSymbolEvent = mexcSymbolEvent
 			}()
 		case <-t.stopCh:
 			log.Println("Stop")
@@ -128,7 +110,12 @@ func (t *Task) Init() {
 func (t *Task) trade(
 	binanceWsReqCh chan *binance.WsApiRequest,
 ) {
-
+	log.Printf("Start task: MinRatio: %s, MaxRatio: %s, ProfitRatio: %s, CloseTimeOut: %v\n",
+		t.minRatio,
+		t.maxRatio,
+		t.profitRatio,
+		config.Config.CloseTimeOut,
+	)
 	var (
 		ok                bool
 		ratio             decimal.Decimal
@@ -162,11 +149,12 @@ func (t *Task) trade(
 
 		select {
 		case <-t.close(binanceWsReqCh, ratio, stableSymbolPrice, binanceEvent, mexcEvent):
+			t.Init()
 		case <-ctx.Done():
 			// 超时开始强平
 			switch t.mode.Load() {
 			case 1:
-				go func() {
+				func() {
 					t.L.Lock()
 					defer t.L.Unlock()
 
@@ -184,7 +172,7 @@ func (t *Task) trade(
 					t.Init()
 				}()
 			case 2:
-				go func() {
+				func() {
 					t.L.Lock()
 					defer t.L.Unlock()
 
@@ -345,7 +333,6 @@ func (t *Task) close(
 
 					// Trade
 					t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
-					t.Init()
 					ch <- struct{}{}
 					return
 				}
@@ -360,7 +347,6 @@ func (t *Task) close(
 
 					// Trade
 					t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
-					t.Init()
 					ch <- struct{}{}
 					return
 				}

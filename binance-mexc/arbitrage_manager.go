@@ -69,6 +69,13 @@ func NewArbitrageManager(symbolPairs SymbolPair) *ArbitrageManager {
 }
 
 func (b *ArbitrageManager) Run() {
+	var (
+		started              atomic.Bool
+		startBinanceWsDoneCh = make(chan struct{})
+		startMexcWsDoneCh    = make(chan struct{})
+	)
+
+	started.Store(false)
 	go func() {
 		restartCh := make(chan struct{})
 		for {
@@ -82,6 +89,7 @@ func (b *ArbitrageManager) Run() {
 
 					switch method {
 					case binance.OrderTrade:
+						log.Println("[BinanceOrderTrade]:", wsApiEvent.OrderTradeResponse.OrderID)
 					default:
 						log.Println(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
 					}
@@ -95,28 +103,16 @@ func (b *ArbitrageManager) Run() {
 		}
 	}()
 
-	go b.startWsBookTicker()
-}
-
-func (b *ArbitrageManager) StartTask(task *Task) {
-	task.run(b.websocketApiServiceManager.RequestCh, b.binanceSymbolEventCh, b.stableCoinSymbolEventCh, b.mexcSymbolEventCh)
-}
-
-func (b *ArbitrageManager) startWsBookTicker() {
-	var (
-		started            atomic.Bool
-		startBinanceDoneCh = make(chan struct{})
-		startMexcDoneCh    = make(chan struct{})
-	)
-	started.Store(false)
-
 	go func() {
 		for {
-			doneC, stopC := b.startBinanceBookTickerWebsocket()
+			doneC, stopC, err := b.startBinanceBookTickerWebsocket()
+			if err != nil {
+				continue
+			}
 			log.Println("[BookTicker] Start binance websocket")
 
-			if started.Load() {
-				startBinanceDoneCh <- struct{}{}
+			if !started.Load() {
+				startBinanceWsDoneCh <- struct{}{}
 			}
 
 			select {
@@ -132,11 +128,14 @@ func (b *ArbitrageManager) startWsBookTicker() {
 
 	go func() {
 		for {
-			doneC, stopC := b.startMexcBookTickerWebsocket()
+			doneC, stopC, err := b.startMexcBookTickerWebsocket()
+			if err != nil {
+				continue
+			}
 			log.Println("[BookTicker] Start mexc websocket")
 
-			if started.Load() {
-				startMexcDoneCh <- struct{}{}
+			if !started.Load() {
+				startMexcWsDoneCh <- struct{}{}
 			}
 
 			select {
@@ -150,9 +149,13 @@ func (b *ArbitrageManager) startWsBookTicker() {
 		}
 	}()
 
-	<-startBinanceDoneCh
-	<-startMexcDoneCh
+	<-startBinanceWsDoneCh
+	<-startMexcWsDoneCh
 	started.Store(true)
+}
+
+func (b *ArbitrageManager) StartTask(task *Task) {
+	task.run(b.websocketApiServiceManager.RequestCh, b.binanceSymbolEventCh, b.stableCoinSymbolEventCh, b.mexcSymbolEventCh)
 }
 
 func (b *ArbitrageManager) Restart() *ArbitrageManager {
@@ -169,19 +172,15 @@ func (b *ArbitrageManager) SetBinanceErrHandler(errHandler binancesdk.ErrHandler
 	b.binanceErrHandler = errHandler
 }
 
-func (b *ArbitrageManager) startBinanceBookTickerWebsocket() (chan struct{}, chan struct{}) {
+func (b *ArbitrageManager) startBinanceBookTickerWebsocket() (chan struct{}, chan struct{}, error) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
-	doneC, stopC, err := binancesdk.WsCombinedBookTickerServe(
+	return binancesdk.WsCombinedBookTickerServe(
 		[]string{b.symbolPairs.BinanceSymbol, b.symbolPairs.StableCoinSymbol},
 		b.binanceHandler,
 		b.binanceErrHandler,
 	)
-	if err != nil {
-		panic(err)
-	}
-	return doneC, stopC
 }
 
 func (b *ArbitrageManager) SetMexcHandler(handler mexc.WsBookTickerHandler) {
@@ -192,17 +191,13 @@ func (b *ArbitrageManager) SetMexcErrHandler(errHandler mexc.ErrHandler) {
 	b.mexcErrHandler = errHandler
 }
 
-func (b *ArbitrageManager) startMexcBookTickerWebsocket() (chan struct{}, chan struct{}) {
+func (b *ArbitrageManager) startMexcBookTickerWebsocket() (chan struct{}, chan struct{}, error) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
-	doneC, stopC, err := mexc.WsBookTickerServe(
+	return mexc.WsBookTickerServe(
 		b.symbolPairs.MexcSymbol,
 		b.mexcHandler,
 		b.mexcErrHandler,
 	)
-	if err != nil {
-		panic(err)
-	}
-	return doneC, stopC
 }
