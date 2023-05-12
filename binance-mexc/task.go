@@ -17,6 +17,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+const base = 10000
+
 type Task struct {
 	binanceApiKey    string
 	binanceSecretKey string
@@ -55,9 +57,9 @@ func NewArbitrageTask(
 		mexcSecretKey:    mexcSecretKey,
 		symbolPairs:      symbolPairs,
 		stopCh:           make(chan struct{}),
-		profitRatio:      decimal.NewFromFloat(ratio).Div(decimal.NewFromInt(10000)),
-		minRatio:         decimal.NewFromFloat(minRatio).Div(decimal.NewFromInt(10000)),
-		maxRatio:         decimal.NewFromFloat(maxRatio).Div(decimal.NewFromInt(10000)),
+		profitRatio:      decimal.NewFromFloat(ratio).Div(decimal.NewFromInt(base)),
+		minRatio:         decimal.NewFromFloat(minRatio).Div(decimal.NewFromInt(base)),
+		maxRatio:         decimal.NewFromFloat(maxRatio).Div(decimal.NewFromInt(base)),
 	}
 }
 
@@ -74,9 +76,15 @@ func (t *Task) run(
 		config.Config.CloseTimeOut,
 	)
 	var (
+		ok                bool
 		ratio             decimal.Decimal
 		stableSymbolPrice decimal.Decimal
-		trade             = func() {
+		ctx               context.Context
+		cancel            context.CancelFunc
+		getCtx            = func() (context.Context, context.CancelFunc) {
+			return context.WithTimeout(context.Background(), time.Duration(config.Config.CloseTimeOut)*time.Millisecond)
+		}
+		trade = func() {
 			stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
 			mexcEvent := t.mexcSymbolEvent
 			if stableEvent == nil || binanceEvent == nil || mexcEvent == nil {
@@ -91,15 +99,14 @@ func (t *Task) run(
 			switch t.mode.Load() {
 			case 0: // Open
 				t.isOpen.Store(true)
-				ratio, stableSymbolPrice = t.open(binanceWsReqCh, binanceEvent, stableEvent, mexcEvent)
+				if ok, ratio, stableSymbolPrice = t.open(binanceWsReqCh, binanceEvent, stableEvent, mexcEvent); ok {
+					ctx, cancel = getCtx()
+				}
+
 			case 1, 2:
 				t.close(binanceWsReqCh, ratio, stableSymbolPrice, binanceEvent, mexcEvent)
 			}
 		}
-		getCtx = func() (context.Context, context.CancelFunc) {
-			return context.WithTimeout(context.Background(), time.Duration(config.Config.CloseTimeOut)*time.Millisecond)
-		}
-		ctx, cancel = getCtx()
 	)
 
 	t.mode.Store(0)
@@ -200,19 +207,19 @@ func (t *Task) open(
 	binanceSymbolEvent *binancesdk.WsBookTickerEvent,
 	stableCoinSymbolEvent *binancesdk.WsBookTickerEvent,
 	mexcSymbolEvent *mexc.WsBookTickerEvent,
-) (decimal.Decimal, decimal.Decimal) {
+) (bool, decimal.Decimal, decimal.Decimal) {
 
 	if ok, ratio, stableSymbolPrice := t.openMode1(binanceWsReqCh, binanceSymbolEvent, stableCoinSymbolEvent, mexcSymbolEvent); ok {
 		t.isOpen.Store(false)
 		log.Println("--------------> Mode2 平仓")
-		return ratio, stableSymbolPrice
+		return true, ratio, stableSymbolPrice
 	} else if ok, ratio, stableSymbolPrice := t.openMode2(binanceWsReqCh, binanceSymbolEvent, stableCoinSymbolEvent, mexcSymbolEvent); ok {
 		t.isOpen.Store(false)
 		log.Println("--------------> Mode1 平仓")
-		return ratio, stableSymbolPrice
+		return true, ratio, stableSymbolPrice
 	}
 
-	return decimal.Zero, decimal.Zero
+	return false, decimal.Zero, decimal.Zero
 }
 
 // 模式1
