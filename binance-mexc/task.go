@@ -170,6 +170,7 @@ func (t *Task) run(
 }
 
 func (t *Task) Init() {
+	time.Sleep(1 * time.Second)
 	t.mode.Store(0)
 	os.Exit(-1)
 }
@@ -300,7 +301,6 @@ func (t *Task) close(
 
 			// Trade
 			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
-			time.Sleep(1 * time.Second)
 			t.Init()
 		}
 	case 2:
@@ -314,7 +314,6 @@ func (t *Task) close(
 
 			// Trade
 			t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
-			time.Sleep(1 * time.Second)
 			t.Init()
 		}
 	}
