@@ -150,7 +150,7 @@ func (t *Task) run(
 
 					mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 					t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
-					t.mode.Store(0)
+					t.Init()
 				}()
 			case 2:
 				go func() {
@@ -159,7 +159,7 @@ func (t *Task) run(
 
 					mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
 					t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
-					t.mode.Store(0)
+					t.Init()
 				}()
 			}
 		case <-t.stopCh:
@@ -167,6 +167,11 @@ func (t *Task) run(
 			return
 		}
 	}
+}
+
+func (t *Task) Init() {
+	t.mode.Store(0)
+	os.Exit(-1)
 }
 
 // 开仓
@@ -295,9 +300,8 @@ func (t *Task) close(
 
 			// Trade
 			t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
-			t.mode.Store(0)
 			time.Sleep(1 * time.Second)
-			os.Exit(-1)
+			t.Init()
 		}
 	case 2:
 		// 做模式1
@@ -310,9 +314,8 @@ func (t *Task) close(
 
 			// Trade
 			t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
-			t.mode.Store(0)
 			time.Sleep(1 * time.Second)
-			os.Exit(-1)
+			t.Init()
 		}
 	}
 }
