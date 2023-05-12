@@ -150,6 +150,7 @@ func (t *Task) run(
 
 					mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 					t.tradeMode2(binanceWsReqCh, "0.0004", mexcSymbolBidPrice.Mul(decimal.NewFromFloat(0.99)).String(), "0.0004")
+					t.mode.Store(0)
 				}()
 			case 2:
 				go func() {
@@ -158,9 +159,9 @@ func (t *Task) run(
 
 					mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
 					t.tradeMode1(binanceWsReqCh, "0.0004", mexcSymbolAskPrice.Mul(decimal.NewFromFloat(1.01)).String(), "0.0004")
+					t.mode.Store(0)
 				}()
 			}
-			t.mode.Store(0)
 		case <-t.stopCh:
 			log.Println("Stop")
 			return
