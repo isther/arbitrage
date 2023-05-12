@@ -9,6 +9,16 @@ import (
 	"github.com/isther/arbitrage/config"
 )
 
+var (
+	symbolPair = binancemexc.SymbolPair{
+		BinanceSymbol:    "BTCTUSD",
+		StableCoinSymbol: "TUSDUSDT",
+		MexcSymbol:       "BTCUSDT",
+	}
+
+	arbitrageManager = binancemexc.NewArbitrageManager(symbolPair)
+)
+
 func init() {
 	config.Load("config.yaml")
 
@@ -16,17 +26,11 @@ func init() {
 	binance.WebsocketKeepalive = true
 	binancesdk.WebsocketKeepalive = true
 	log.SetFlags(log.Ldate | log.Lmicroseconds)
+
+	arbitrageManager.Run()
 }
 
 func main() {
-	symbolPair := binancemexc.SymbolPair{
-		BinanceSymbol:    "BTCTUSD",
-		StableCoinSymbol: "TUSDUSDT",
-		MexcSymbol:       "BTCUSDT",
-	}
-
-	arbitrageManager := binancemexc.NewArbitrageManager(symbolPair)
-	arbitrageManager.Run()
 	arbitrageManager.StartTask(
 		binancemexc.NewArbitrageTask(
 			config.Config.BinanceApiKey,
@@ -34,9 +38,9 @@ func main() {
 			config.Config.MexcApiKey,
 			config.Config.MexcSecretKey,
 			symbolPair,
-			0.00003,
-			0.00007,
-			0.00015,
+			config.Config.ProfitRatio,
+			config.Config.MinRatio,
+			config.Config.MaxRatio,
 		),
 	)
 }

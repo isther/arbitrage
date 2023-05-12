@@ -55,9 +55,9 @@ func NewArbitrageTask(
 		mexcSecretKey:    mexcSecretKey,
 		symbolPairs:      symbolPairs,
 		stopCh:           make(chan struct{}),
-		Ratio:            decimal.NewFromFloat(ratio),
-		MinRatio:         decimal.NewFromFloat(minRatio),
-		MaxRatio:         decimal.NewFromFloat(maxRatio),
+		Ratio:            decimal.NewFromFloat(ratio).Div(decimal.NewFromInt(10000)),
+		MinRatio:         decimal.NewFromFloat(minRatio).Div(decimal.NewFromInt(10000)),
+		MaxRatio:         decimal.NewFromFloat(maxRatio).Div(decimal.NewFromInt(10000)),
 	}
 }
 
@@ -92,7 +92,7 @@ func (t *Task) run(
 			}
 		}
 		getCtx = func() (context.Context, context.CancelFunc) {
-			return context.WithTimeout(context.Background(), 1000*time.Second)
+			return context.WithTimeout(context.Background(), time.Duration(config.Config.CloseTimeOut)*time.Millisecond)
 		}
 		ctx, cancel = getCtx()
 	)

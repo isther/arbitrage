@@ -30,18 +30,26 @@ binanceSecretKey: ""
 mexcApiKey: ""
 mexcSecretKey: ""
 mexcCookie:""
+minRatio: 0.0,
+maxRatio: 0.0,
+profitRatio: 0.0,
+closeTimeOut: 500,
 `
 )
 
 // ServerConfig defines the config of the server
 type ServerConfig struct {
-	UseProxy         bool   `json:"useProxy" yaml:"useProxy"`
-	Proxy            string `json:"proxy" yaml:"proxy"`
-	BinanceApiKey    string `json:"binanceApiKey" yaml:"binanceApiKey"`
-	BinanceSecretKey string `json:"binanceSecretKey" yaml:"binanceSecretKey"`
-	MexcApiKey       string `json:"mexcApiKey" yaml:"mexcApiKey"`
-	MexcSecretKey    string `json:"mexcSecretKey" yaml:"mexcSecretKey"`
-	MexcCookie       string `json:"mexcCookie" yaml:"mexcCookie"`
+	UseProxy         bool    `json:"useProxy" yaml:"useProxy"`
+	Proxy            string  `json:"proxy" yaml:"proxy"`
+	BinanceApiKey    string  `json:"binanceApiKey" yaml:"binanceApiKey"`
+	BinanceSecretKey string  `json:"binanceSecretKey" yaml:"binanceSecretKey"`
+	MexcApiKey       string  `json:"mexcApiKey" yaml:"mexcApiKey"`
+	MexcSecretKey    string  `json:"mexcSecretKey" yaml:"mexcSecretKey"`
+	MexcCookie       string  `json:"mexcCookie" yaml:"mexcCookie"`
+	MinRatio         float64 `json:"minRatio" yaml:"minRatio"`
+	MaxRatio         float64 `json:"maxRatio" yaml:"maxRatio"`
+	ProfitRatio      float64 `json:"profitRatio" yaml:"profitRatio"`
+	CloseTimeOut     int64   `json:"closeTimeOut" yaml:"closeTimeOut"`
 }
 
 func loadConfigFile(filename string) error {

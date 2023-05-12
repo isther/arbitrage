@@ -3,6 +3,7 @@ package binancemexc
 import (
 	"log"
 	"sync"
+	"sync/atomic"
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
@@ -99,10 +100,21 @@ func (b *ArbitrageManager) StartTask(task *Task) {
 }
 
 func (b *ArbitrageManager) startWsBookTicker() {
+	var (
+		started            atomic.Bool
+		startBinanceDoneCh = make(chan struct{})
+		startMexcDoneCh    = make(chan struct{})
+	)
+	started.Store(false)
+
 	go func() {
 		for {
 			doneC, stopC := b.startBinanceBookTickerWebsocket()
 			log.Println("[BookTicker] Start binance websocket")
+
+			if started.Load() {
+				startBinanceDoneCh <- struct{}{}
+			}
 
 			select {
 			case <-b.restartCh:
@@ -116,10 +128,13 @@ func (b *ArbitrageManager) startWsBookTicker() {
 	}()
 
 	go func() {
-
 		for {
 			doneC, stopC := b.startMexcBookTickerWebsocket()
 			log.Println("[BookTicker] Start mexc websocket")
+
+			if started.Load() {
+				startMexcDoneCh <- struct{}{}
+			}
 
 			select {
 			case <-b.restartCh:
@@ -131,6 +146,10 @@ func (b *ArbitrageManager) startWsBookTicker() {
 			stopC <- struct{}{}
 		}
 	}()
+
+	<-startBinanceDoneCh
+	<-startMexcDoneCh
+	started.Store(true)
 }
 
 func (b *ArbitrageManager) Restart() *ArbitrageManager {

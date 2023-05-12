@@ -77,10 +77,11 @@ type WsPrivateDealsEvent struct {
 }
 
 type Data struct {
-	AskQty   string `json:"A"` //卖单最优挂单数量
-	BidQty   string `json:"B"` //买单最优挂单数量
-	AskPrice string `json:"a"` //卖单最优挂单价格`
-	BidPrice string `json:"b"` //买单最优挂单价格
+	AskQty        string `json:"A"` //卖单最优挂单数量
+	BidQty        string `json:"B"` //买单最优挂单数量
+	AskPrice      string `json:"a"` //卖单最优挂单价格`
+	BidPrice      string `json:"b"` //买单最优挂单价格
+	OrderId       string `json:"i"`
 }
 
 type WsBookTickerHandler func(event *WsBookTickerEvent)
