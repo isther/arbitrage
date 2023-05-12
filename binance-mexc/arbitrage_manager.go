@@ -80,7 +80,11 @@ func (b *ArbitrageManager) Run() {
 						return
 					}
 
-					log.Println(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+					switch method {
+					case binance.OrderTrade:
+					default:
+						log.Println(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+					}
 				},
 				func(err error) {
 					restartCh <- struct{}{}
