@@ -30,9 +30,9 @@ type Task struct {
 	stableCoinSymbolEvent *binancesdk.WsBookTickerEvent
 	mexcSymbolEvent       *mexc.WsBookTickerEvent
 
-	MinRatio decimal.Decimal
-	MaxRatio decimal.Decimal
-	Ratio    decimal.Decimal
+	minRatio    decimal.Decimal
+	maxRatio    decimal.Decimal
+	profitRatio decimal.Decimal
 
 	stopCh chan struct{}
 
@@ -55,9 +55,9 @@ func NewArbitrageTask(
 		mexcSecretKey:    mexcSecretKey,
 		symbolPairs:      symbolPairs,
 		stopCh:           make(chan struct{}),
-		Ratio:            decimal.NewFromFloat(ratio).Div(decimal.NewFromInt(10000)),
-		MinRatio:         decimal.NewFromFloat(minRatio).Div(decimal.NewFromInt(10000)),
-		MaxRatio:         decimal.NewFromFloat(maxRatio).Div(decimal.NewFromInt(10000)),
+		profitRatio:      decimal.NewFromFloat(ratio).Div(decimal.NewFromInt(10000)),
+		minRatio:         decimal.NewFromFloat(minRatio).Div(decimal.NewFromInt(10000)),
+		maxRatio:         decimal.NewFromFloat(maxRatio).Div(decimal.NewFromInt(10000)),
 	}
 }
 
@@ -67,7 +67,12 @@ func (t *Task) run(
 	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent,
 	mexcSymbolEventCh chan *mexc.WsBookTickerEvent,
 ) {
-
+	log.Printf("Start task: MinRatio: %s, MaxRatio: %s, ProfitRatio: %s, CloseTimeOut: %v\n",
+		t.minRatio,
+		t.maxRatio,
+		t.profitRatio,
+		config.Config.CloseTimeOut,
+	)
 	var (
 		ratio             decimal.Decimal
 		stableSymbolPrice decimal.Decimal
@@ -198,7 +203,7 @@ func (t *Task) openMode1(
 	binanceSymbolBidPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestBidPrice)
 
 	ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
-	if ratioMode1.GreaterThanOrEqual(t.MinRatio) && ratioMode1.LessThanOrEqual(t.MaxRatio) {
+	if ratioMode1.GreaterThanOrEqual(t.minRatio) && ratioMode1.LessThanOrEqual(t.maxRatio) {
 		t.mode.Store(1)
 		t.ratioLog(ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice)
 		// 币安把BTC卖出为TUSD、抹茶把USDT买入为BTC；
@@ -240,7 +245,7 @@ func (t *Task) openMode2(
 	mexcSymbolBidPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.BidPrice)
 
 	ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
-	if ratioMode2.GreaterThanOrEqual(t.MinRatio) && ratioMode2.LessThanOrEqual(t.MaxRatio) {
+	if ratioMode2.GreaterThanOrEqual(t.minRatio) && ratioMode2.LessThanOrEqual(t.maxRatio) {
 		t.mode.Store(2)
 		t.ratioLog(ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice)
 		// 币安把TUSD买入为BTC、抹茶把BTC卖出为USDT；
@@ -280,7 +285,7 @@ func (t *Task) close(
 	switch t.mode.Load() {
 	case 1:
 		// 做模式2
-		ratio = decimal.NewFromFloat(-0.0001).Sub(ratio).Add(t.Ratio)
+		ratio = decimal.NewFromFloat(-0.0001).Sub(ratio).Add(t.profitRatio)
 		binanceSymbolAskPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestAskPrice)
 		mexcSymbolBidPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.BidPrice)
 
@@ -295,7 +300,7 @@ func (t *Task) close(
 		}
 	case 2:
 		// 做模式1
-		ratio = decimal.NewFromFloat(-0.0001).Sub(ratio).Add(t.Ratio)
+		ratio = decimal.NewFromFloat(-0.0001).Sub(ratio).Add(t.profitRatio)
 		mexcSymbolAskPrice, _ := decimal.NewFromString(mexcSymbolEvent.Data.AskPrice)
 		binanceSymbolBidPrice, _ := decimal.NewFromString(binanceSymbolEvent.BestBidPrice)
 
