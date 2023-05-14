@@ -74,26 +74,26 @@ func (t *Task) run(
 	mexcSymbolEventCh chan *mexc.WsBookTickerEvent,
 ) {
 	// Init
-	logrus.Infof("Start task: MinRatio: %s, MaxRatio: %s, ProfitRatio: %s, CloseTimeOut: %v\n",
-		t.minRatio,
-		t.maxRatio,
-		t.profitRatio,
-		config.Config.CloseTimeOut,
-	)
 	t.mode.Store(0)
 	t.isOpen.Store(true)
+
+	var (
+		doCh = make(chan struct{})
+	)
+
+	go t.trade(binanceWsReqCh, openMexcOrderIdCh, closeMexcOrderIdCh, doCh)
 
 	for {
 		select {
 		case binanceSymbolEvent := <-binanceSymbolEventCh:
 			t.binanceSymbolEvent = binanceSymbolEvent
-			go t.trade(binanceWsReqCh, openMexcOrderIdCh, closeMexcOrderIdCh)
+			doCh <- struct{}{}
 		case stableCoinSymbolEvent := <-stableCoinSymbolEventCh:
 			t.stableCoinSymbolEvent = stableCoinSymbolEvent
-			go t.trade(binanceWsReqCh, openMexcOrderIdCh, closeMexcOrderIdCh)
+			doCh <- struct{}{}
 		case mexcSymbolEvent := <-mexcSymbolEventCh:
 			t.mexcSymbolEvent = mexcSymbolEvent
-			go t.trade(binanceWsReqCh, openMexcOrderIdCh, closeMexcOrderIdCh)
+			doCh <- struct{}{}
 		case <-t.stopCh:
 			logrus.Info("Stop")
 			return
@@ -111,41 +111,49 @@ func (t *Task) trade(
 	binanceWsReqCh chan *binance.WsApiRequest,
 	openMexcOrderIdCh chan string,
 	closeMexcOrderIdCh chan string,
+	doCh chan struct{},
 ) {
-	if !t.L.TryLock() {
-		return
-	}
-	defer t.L.Unlock()
 
-	// stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
-	// mexcEvent := t.mexcSymbolEvent
-	if t.stableCoinSymbolEvent == nil || t.binanceSymbolEvent == nil || t.mexcSymbolEvent == nil {
-		logrus.Debug("Get nil event")
-		return
-	}
-	if t.mexcSymbolEvent.Data.AskPrice == "" {
-		logrus.Debug("Get null mexc event")
-		return
-	}
+	for {
 
-	switch t.mode.Load() {
-	case 0:
-		var (
-			ok bool
-		)
-		for {
-			t.isOpen.Store(true)
-			ok, t.closeRatio, t.closeStablePrice = t.open(binanceWsReqCh, openMexcOrderIdCh)
-			if ok {
-				break
-			}
+		// stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
+		// mexcEvent := t.mexcSymbolEvent
+		if t.stableCoinSymbolEvent == nil || t.binanceSymbolEvent == nil || t.mexcSymbolEvent == nil {
+			logrus.Debug("Get nil event")
+			return
 		}
-	case 1, 2:
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.Config.CloseTimeOut)*time.Millisecond)
-		defer cancel()
+		if t.mexcSymbolEvent.Data.AskPrice == "" {
+			logrus.Debug("Get null mexc event")
+			return
+		}
 
-		t.close(binanceWsReqCh, closeMexcOrderIdCh, ctx)
-		t.Init()
+		logrus.Infof("Start task: MinRatio: %s, MaxRatio: %s, ProfitRatio: %s, CloseTimeOut: %v\n",
+			t.minRatio,
+			t.maxRatio,
+			t.profitRatio,
+			config.Config.CloseTimeOut,
+		)
+
+		switch t.mode.Load() {
+		case 0:
+			var (
+				ok bool
+			)
+			for {
+				<-doCh
+				t.isOpen.Store(true)
+				ok, t.closeRatio, t.closeStablePrice = t.open(binanceWsReqCh, openMexcOrderIdCh)
+				if ok {
+					break
+				}
+			}
+		case 1, 2:
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.Config.CloseTimeOut)*time.Millisecond)
+			defer cancel()
+
+			t.close(binanceWsReqCh, closeMexcOrderIdCh, ctx)
+			t.Init()
+		}
 	}
 }
 
