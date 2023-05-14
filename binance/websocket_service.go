@@ -5,8 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"log"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -100,7 +101,7 @@ func NewWebsocketServiceManager() *WebsocketServiceManager {
 }
 
 func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}) {
-	log.Println("Start binance websocket api service.")
+	logrus.Info("Start binance websocket api service.")
 	var (
 		msgC  chan []byte
 		doneC chan struct{}
@@ -119,18 +120,18 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 			break
 		}
 
-		log.Printf("[ERROR] Failed to connect to websocket server: %v, reconnect server: %d", err, cnt)
+		logrus.Error("Failed to connect to websocket server: %v, reconnect server: %d", err, cnt)
 		cnt++
 		continue
 	}
-	log.Println("Connect to websocket server successfully.")
+	logrus.Info("Connect to websocket server successfully.")
 
 	go func() {
 		for {
 			wsApiRequest := <-w.RequestCh
 			msg, err := json.Marshal(wsApiRequest)
 			if err != nil {
-				log.Println("[ERROR] Failed to marshal wsApiRequest:", err)
+				logrus.Error("Failed to marshal wsApiRequest:", err)
 			}
 			// log.Println(string(msg))
 

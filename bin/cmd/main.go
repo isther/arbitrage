@@ -1,12 +1,11 @@
 package main
 
 import (
-	"log"
-
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
 	binancemexc "github.com/isther/arbitrage/binance-mexc"
 	"github.com/isther/arbitrage/config"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -17,6 +16,7 @@ var (
 	}
 
 	arbitrageManager = binancemexc.NewArbitrageManager(symbolPair)
+	orderManager     = binancemexc.NewOrderManager()
 )
 
 func init() {
@@ -25,9 +25,12 @@ func init() {
 	// Keep ws alive
 	binance.WebsocketKeepalive = true
 	binancesdk.WebsocketKeepalive = true
-	log.SetFlags(log.Ldate | log.Lmicroseconds)
+	logrus.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05.000",
+	})
 
-	arbitrageManager.Run()
+	arbitrageManager.Run(orderManager.OpenBinanceOrderIdCh, orderManager.CloseBinanceOrderIdCh)
 }
 
 func main() {
@@ -42,5 +45,7 @@ func main() {
 			config.Config.MinRatio,
 			config.Config.MaxRatio,
 		),
+		orderManager.OpenMexcOrderIdCh,
+		orderManager.CloseMexcOrderIdCh,
 	)
 }

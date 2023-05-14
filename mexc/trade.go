@@ -12,15 +12,15 @@ import (
 	"time"
 )
 
-func MexcBTCBuy(cookie, price, quantity string) (string, error) {
+func MexcBTCBuy(cookie, price, quantity string) (*OrderResponse, error) {
 	return sendMexcOrder(cookie, "BTC", price, quantity, string(SideTypeBuy))
 }
 
-func MexcBTCSell(cookie, price, quantity string) (string, error) {
+func MexcBTCSell(cookie, price, quantity string) (*OrderResponse, error) {
 	return sendMexcOrder(cookie, "BTC", price, quantity, string(SideTypeSell))
 }
 
-func sendMexcOrder(cookie, currency, price, quantity, OrderType string) (string, error) {
+func sendMexcOrder(cookie, currency, price, quantity, OrderType string) (*OrderResponse, error) {
 	client := &http.Client{}
 	song := make(map[string]string)
 	song["currency"] = currency
@@ -35,7 +35,7 @@ func sendMexcOrder(cookie, currency, price, quantity, OrderType string) (string,
 		bytes.NewBuffer([]byte(bytesData)))
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return nil, err
 	}
 	var stimep = strconv.Itoa(int(time.Now().Unix() * 1000))
 	var sign = md5Encrypt(stimep)
@@ -64,20 +64,28 @@ func sendMexcOrder(cookie, currency, price, quantity, OrderType string) (string,
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return nil, err
 	}
 
 	// str := (*string)(unsafe.Pointer(&content)) //转化为string,优化内存
-	str := string(content)
-	return str, nil
+	var res OrderResponse
+	json.Unmarshal(content, &res)
+	return &res, nil
 
+}
+
+type OrderResponse struct {
+	Data      string `json:"data"`
+	Code      int    `json:"code"`
+	Msg       string `json:"msg"`
+	TimeStamp int64  `json:"time"`
 }
 
 func md5Encrypt(txt string) string {
