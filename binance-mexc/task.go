@@ -116,6 +116,7 @@ func (t *Task) trade(
 
 	for {
 
+		<-doCh
 		// stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
 		// mexcEvent := t.mexcSymbolEvent
 		if t.stableCoinSymbolEvent == nil || t.binanceSymbolEvent == nil || t.mexcSymbolEvent == nil {
