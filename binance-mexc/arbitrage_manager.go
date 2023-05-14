@@ -40,7 +40,8 @@ type SymbolPair struct {
 
 func NewArbitrageManager(symbolPairs SymbolPair) *ArbitrageManager {
 	var b = ArbitrageManager{
-		symbolPairs: symbolPairs, binanceSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
+		symbolPairs:          symbolPairs,
+		binanceSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
 
 		websocketApiServiceManager: binance.NewWebsocketServiceManager(),
 
@@ -170,7 +171,12 @@ func (b *ArbitrageManager) Run(
 }
 
 func (b *ArbitrageManager) StartTask(task *Task, openMexcOrderIdCh, closeMexcOrderIdCh chan string) {
-	task.run(b.websocketApiServiceManager.RequestCh, openMexcOrderIdCh, closeMexcOrderIdCh, b.binanceSymbolEventCh, b.stableCoinSymbolEventCh, b.mexcSymbolEventCh)
+	task.run(b.websocketApiServiceManager.RequestCh,
+		openMexcOrderIdCh, closeMexcOrderIdCh,
+		b.binanceSymbolEventCh,
+		b.stableCoinSymbolEventCh,
+		b.mexcSymbolEventCh,
+	)
 }
 
 func (b *ArbitrageManager) Restart() *ArbitrageManager {

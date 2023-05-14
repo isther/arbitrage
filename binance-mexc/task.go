@@ -78,22 +78,25 @@ func (t *Task) run(
 	t.isOpen.Store(true)
 
 	var (
-		doCh = make(chan struct{})
+		doCh = make(chan struct{}, 100)
 	)
 
 	go t.trade(binanceWsReqCh, openMexcOrderIdCh, closeMexcOrderIdCh, doCh)
 
 	for {
 		select {
-		case binanceSymbolEvent := <-binanceSymbolEventCh:
-			t.binanceSymbolEvent = binanceSymbolEvent
-			doCh <- struct{}{}
-		case stableCoinSymbolEvent := <-stableCoinSymbolEventCh:
-			t.stableCoinSymbolEvent = stableCoinSymbolEvent
-			doCh <- struct{}{}
-		case mexcSymbolEvent := <-mexcSymbolEventCh:
-			t.mexcSymbolEvent = mexcSymbolEvent
-			doCh <- struct{}{}
+		case t.binanceSymbolEvent = <-binanceSymbolEventCh:
+			// t.binanceSymbolEvent = binanceSymbolEvent
+			go func() { doCh <- struct{}{} }()
+			time.Sleep(1 * time.Millisecond)
+		case t.stableCoinSymbolEvent = <-stableCoinSymbolEventCh:
+			// t.stableCoinSymbolEvent = stableCoinSymbolEvent
+			go func() { doCh <- struct{}{} }()
+			time.Sleep(1 * time.Millisecond)
+		case t.mexcSymbolEvent = <-mexcSymbolEventCh:
+			// t.mexcSymbolEvent = mexcSymbolEvent
+			go func() { doCh <- struct{}{} }()
+			time.Sleep(1 * time.Millisecond)
 		case <-t.stopCh:
 			logrus.Info("Stop")
 			return
@@ -115,17 +118,16 @@ func (t *Task) trade(
 ) {
 
 	for {
-
 		<-doCh
 		// stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
 		// mexcEvent := t.mexcSymbolEvent
 		if t.stableCoinSymbolEvent == nil || t.binanceSymbolEvent == nil || t.mexcSymbolEvent == nil {
 			logrus.Debug("Get nil event")
-			return
+			continue
 		}
 		if t.mexcSymbolEvent.Data.AskPrice == "" {
 			logrus.Debug("Get null mexc event")
-			return
+			continue
 		}
 
 		logrus.Infof("Start task: MinRatio: %s, MaxRatio: %s, ProfitRatio: %s, CloseTimeOut: %v\n",
