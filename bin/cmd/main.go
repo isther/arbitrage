@@ -31,6 +31,7 @@ func init() {
 	})
 
 	arbitrageManager.Run(orderManager.OpenBinanceOrderIdCh, orderManager.CloseBinanceOrderIdCh)
+	orderManager.Run()
 }
 
 func main() {

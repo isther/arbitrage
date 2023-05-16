@@ -16,6 +16,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	number int64 = 0
+)
+
 const base = 10000
 
 type Task struct {
@@ -107,7 +111,11 @@ func (t *Task) run(
 func (t *Task) Init() {
 	time.Sleep(5 * time.Second)
 	t.mode.Store(0)
-	os.Exit(-1)
+
+	number++
+	if config.Config.Number == number {
+		os.Exit(-1)
+	}
 }
 
 func (t *Task) trade(

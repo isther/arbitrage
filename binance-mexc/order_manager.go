@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 )
 
 type OrderPair struct {
@@ -42,6 +43,8 @@ func (o *OrderManager) Run() {
 			openBinanceOrderId := <-o.OpenMexcOrderIdCh
 			openMexcOrderId := <-o.OpenMexcOrderIdCh
 
+			logrus.Info(openBinanceOrderId, " ", openMexcOrderId)
+
 			//TODO: log.pln
 			o.CalOpen(
 				o.getBinanceOrderPair(openBinanceOrderId),
@@ -55,6 +58,8 @@ func (o *OrderManager) Run() {
 			closeBinanceOrderId := <-o.CloseBinanceOrderIdCh
 			closeMexcOrderId := <-o.CloseMexcOrderIdCh
 
+			logrus.Info(closeBinanceOrderId, " ", closeMexcOrderId)
+
 			o.CalClose(
 				o.getBinanceOrderPair(closeBinanceOrderId),
 				o.getMexcOrderPair(closeMexcOrderId),
@@ -63,8 +68,13 @@ func (o *OrderManager) Run() {
 	}()
 }
 
-func (o *OrderManager) CalOpen(openBinancePair, openMexcPair *OrderPair)    {}
-func (o *OrderManager) CalClose(closeBinancePair, closeMexcPair *OrderPair) {}
+func (o *OrderManager) CalOpen(openBinancePair, openMexcPair *OrderPair) {
+	// logrus.Info("CalOpen")
+}
+
+func (o *OrderManager) CalClose(closeBinancePair, closeMexcPair *OrderPair) {
+	// logrus.Info("CalClose")
+}
 
 func (o *OrderManager) getBinanceOrderPair(binanceOrderId string) *OrderPair {
 	o.L.Lock()

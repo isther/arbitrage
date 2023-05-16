@@ -31,9 +31,10 @@ mexcApiKey: ""
 mexcSecretKey: ""
 mexcCookie:""
 minRatio: 0.0,
-maxRatio: 0.0,
-profitRatio: 0.0,
-closeTimeOut: 500,
+maxRatio: 0.0
+profitRatio: 0.0
+closeTimeOut: 500
+number: 1
 `
 )
 
@@ -50,6 +51,7 @@ type ServerConfig struct {
 	MaxRatio         float64 `json:"maxRatio" yaml:"maxRatio"`
 	ProfitRatio      float64 `json:"profitRatio" yaml:"profitRatio"`
 	CloseTimeOut     int64   `json:"closeTimeOut" yaml:"closeTimeOut"`
+	Number           int64   `json:"number" yaml:"number"`
 }
 
 func loadConfigFile(filename string) error {
