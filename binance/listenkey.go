@@ -2,7 +2,6 @@ package binance
 
 import (
 	"context"
-	"fmt"
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/config"
@@ -20,8 +19,7 @@ func CreateListenKey() string {
 
 	response, err := client.NewStartUserStreamService().Do(context.Background())
 	if err != nil {
-		fmt.Println(err)
-		return err.Error()
+		panic(err)
 	}
 	listenKey := response
 	return listenKey
@@ -32,9 +30,7 @@ func KeepListenKey(listenKey string) interface{} {
 	client := binancesdk.NewClient(config.Config.BinanceApiKey, config.Config.BinanceSecretKey)
 	err := client.NewKeepaliveUserStreamService().ListenKey(listenKey).Do(newContext())
 	if err != nil {
-		fmt.Println("Current listenKey: ", listenKey)
-		fmt.Println(err)
-		return nil
+		panic(err)
 	}
 	return nil
 }
@@ -44,9 +40,7 @@ func CloseListenKey(listenKey string) interface{} {
 	client := binancesdk.NewClient(config.Config.BinanceApiKey, config.Config.BinanceSecretKey)
 	err := client.NewCloseUserStreamService().ListenKey(listenKey).Do(newContext())
 	if err != nil {
-		fmt.Println("Current listenKey: ", listenKey)
-		fmt.Println(err)
-		return nil
+		panic(err)
 	}
 	return nil
 }

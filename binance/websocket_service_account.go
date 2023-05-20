@@ -1,7 +1,6 @@
 package binance
 
 import (
-	// "time"
 	"fmt"
 	"net/url"
 

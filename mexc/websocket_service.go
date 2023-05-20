@@ -2,6 +2,7 @@ package mexc
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -144,7 +145,9 @@ func WsAccountInfoServe(handler WsPrivateAccountHandler, errHandler ErrHandler) 
 		return nil, nil, nil
 	}
 	listenkey := listenKeyResponse.ListenKey
-	fmt.Println("new listenkey:", listenkey)
+	if strings.TrimSpace(listenkey) == "" {
+		return nil, nil, errors.New("listenkey is empty")
+	}
 
 	go func() {
 		// 每30秒发送一个PUT
@@ -218,7 +221,7 @@ func WsDealsInfoServe(handler WsPrivateDealsHandler, errHandler ErrHandler) (cha
 	go func() {
 		// 每30秒发送一个PUT
 		time.Sleep(30 * time.Second)
-		params := "listenKey=" + listenkey
+		params := "listenkey=" + listenkey
 		KeepListenKey(params)
 	}()
 

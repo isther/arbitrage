@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -34,8 +33,7 @@ func sendMexcOrder(cookie, currency, price, quantity, OrderType string) (*OrderR
 	req, err := http.NewRequest("POST", "https://www.mexc.com/api/platform/spot/order/place",
 		bytes.NewBuffer([]byte(bytesData)))
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		panic(err)
 	}
 	var stimep = strconv.Itoa(int(time.Now().Unix() * 1000))
 	var sign = md5Encrypt(stimep)
@@ -63,15 +61,13 @@ func sendMexcOrder(cookie, currency, price, quantity, OrderType string) (*OrderR
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		panic(err)
 	}
 	defer resp.Body.Close()
 
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		panic(err)
 	}
 
 	// str := (*string)(unsafe.Pointer(&content)) //转化为string,优化内存

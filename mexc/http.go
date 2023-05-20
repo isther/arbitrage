@@ -23,7 +23,7 @@ func JsonToParamStr(jsonParams string) string {
 	m := make(map[string]string)
 	err := json.Unmarshal([]byte(jsonParams), &m)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 	i := 0
 	for key, value := range m {
@@ -140,7 +140,6 @@ func PrivatePost(urlStr string, jsonParams string) interface{} {
 func PrivateDelete(urlStr string, jsonParams string) interface{} {
 	var path string
 	timestamp := time.Now().UnixNano() / 1e6
-	fmt.Println(timestamp)
 	if jsonParams == "" {
 		message := fmt.Sprintf("timestamp=%d", timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
@@ -171,7 +170,6 @@ func PrivateDelete(urlStr string, jsonParams string) interface{} {
 func PrivatePut(urlStr string, jsonParams string) interface{} {
 	var path string
 	timestamp := time.Now().UnixNano() / 1e6
-	fmt.Println(timestamp)
 	if jsonParams == "" {
 		message := fmt.Sprintf("timestamp=%d", timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
