@@ -16,7 +16,6 @@ func newContext() context.Context {
 //
 // 1 生成 Listen Key  Create a ListenKey
 func CreateListenKey() string {
-
 	client := binancesdk.NewClient(config.Config.BinanceApiKey, config.Config.BinanceSecretKey)
 
 	response, err := client.NewStartUserStreamService().Do(context.Background())

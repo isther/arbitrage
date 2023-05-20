@@ -1,7 +1,5 @@
 package mexc
 
-import "fmt"
-
 const (
 	baseHttpURL  = "https://api.mexc.com"
 	ListenKeyApi = "/api/v3/userDataStream"
@@ -14,28 +12,28 @@ func getNewListenKeyApi() string {
 	return ListenKeyApi
 }
 
-//	WS ListenKey
+// WS ListenKey
 //
-// 1 生成 Listen Key  Create a ListenKey
+// 生成 Listen Key  Create a ListenKey
 func CreateListenKey(jsonParams string) interface{} {
 	requestUrl := getHttpEndpoint() + getNewListenKeyApi()
-	fmt.Println("requestUrl:", requestUrl)
+	// fmt.Println("requestUrl:", requestUrl)
 	response := PrivatePost(requestUrl, jsonParams)
 	return response
 }
 
-// 2 延长 Listen Key 有效期  Keep-alive a ListenKey
+// 延长 Listen Key 有效期  Keep-alive a ListenKey
 func KeepListenKey(jsonParams string) interface{} {
 	requestUrl := getHttpEndpoint() + getNewListenKeyApi()
-	fmt.Println("requestUrl:", requestUrl)
+	// fmt.Println("requestUrl:", requestUrl)
 	response := PrivatePut(requestUrl, jsonParams)
 	return response
 }
 
-// 3 关闭 Listen Key  Close a ListenKey
+// 关闭 Listen Key  Close a ListenKey
 func CloseListenKey(jsonParams string) interface{} {
 	requestUrl := getHttpEndpoint() + getNewListenKeyApi()
-	fmt.Println("requestUrl:", requestUrl)
+	// fmt.Println("requestUrl:", requestUrl)
 	response := PrivateDelete(requestUrl, jsonParams)
 	return response
 }

@@ -25,20 +25,16 @@ func JsonToParamStr(jsonParams string) string {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("map:%v\n", m)
 	i := 0
 	for key, value := range m {
-
 		arritem = fmt.Sprintf("%s=%s", key, value)
 		paramsarr = append(paramsarr, arritem)
 		i++
-		fmt.Println("遍历：", i, "总共", len(m))
 		if i > len(m) {
 			break
 		}
 	}
 	paramsstr := strings.Join(paramsarr, "&")
-	fmt.Println("参数字符串：", paramsstr)
 	return paramsstr
 }
 
@@ -49,7 +45,6 @@ func ParamsEncode(paramStr string) string {
 
 // 加密
 func ComputeHmac256(Message string, sec_key string) string {
-	fmt.Println("Message")
 	key := []byte(sec_key)
 	h := hmac.New(sha256.New, key)
 	h.Write([]byte(Message))
@@ -64,7 +59,6 @@ func PublicGet(urlStr string, jsonParams string) interface{} {
 	} else {
 		strParams := JsonToParamStr(jsonParams)
 		path = urlStr + "?" + strParams
-		fmt.Println("路径:", path)
 	}
 	//创建请求
 	client := resty.New()
@@ -83,23 +77,17 @@ func PublicGet(urlStr string, jsonParams string) interface{} {
 func PrivateGet(urlStr string, jsonParams string) interface{} {
 	var path string
 	timestamp := time.Now().UnixNano() / 1e6
-	fmt.Println(timestamp)
+	// fmt.Println(timestamp)
 	if jsonParams == "" {
 		message := fmt.Sprintf("timestamp=%d", timestamp)
 		// sign := ComputeHmac256(message, config.SEC_KEY)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
 		path = fmt.Sprintf("%s?timestamp=%d&signature=%s", urlStr, timestamp, sign)
-		fmt.Println("message:", message)
-		fmt.Println("sign:", sign)
-		fmt.Println("path:", path)
 	} else {
 		strParams := JsonToParamStr(jsonParams)
 		message := fmt.Sprintf("%s&timestamp=%d", strParams, timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
 		path = fmt.Sprintf("%s?%s&timestamp=%d&signature=%s", urlStr, strParams, timestamp, sign)
-		fmt.Println("message:", ParamsEncode(message))
-		fmt.Println("sign:", sign)
-		fmt.Println("path:", path)
 	}
 	//创建请求
 	client := resty.New()
@@ -121,22 +109,16 @@ func PrivateGet(urlStr string, jsonParams string) interface{} {
 func PrivatePost(urlStr string, jsonParams string) interface{} {
 	var path string
 	timestamp := time.Now().UnixNano() / 1e6
-	fmt.Println("timestamp: ", timestamp)
+	// fmt.Println("timestamp: ", timestamp)
 	if jsonParams == "" {
 		message := fmt.Sprintf("timestamp=%d", timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
 		path = fmt.Sprintf("%s?timestamp=%d&signature=%s", urlStr, timestamp, sign)
-		fmt.Println("message:", message)
-		fmt.Println("sign:", sign)
-		fmt.Println("path:", path)
 	} else {
 		strParams := JsonToParamStr(jsonParams)
 		message := fmt.Sprintf("%s&timestamp=%d", strParams, timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
 		path = fmt.Sprintf("%s?%s&timestamp=%d&signature=%s", urlStr, strParams, timestamp, sign)
-		fmt.Println("message:", ParamsEncode(message))
-		fmt.Println("sign:", sign)
-		fmt.Println("path:", path)
 	}
 	//创建请求
 	client := resty.New()
@@ -163,17 +145,11 @@ func PrivateDelete(urlStr string, jsonParams string) interface{} {
 		message := fmt.Sprintf("timestamp=%d", timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
 		path = fmt.Sprintf("%s?timestamp=%d&signature=%s", urlStr, timestamp, sign)
-		fmt.Println("message:", message)
-		fmt.Println("sign:", sign)
-		fmt.Println("path:", path)
 	} else {
 		strParams := JsonToParamStr(jsonParams)
 		message := fmt.Sprintf("%s&timestamp=%d", strParams, timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
 		path = fmt.Sprintf("%s?%s&timestamp=%d&signature=%s", urlStr, strParams, timestamp, sign)
-		fmt.Println("message:", ParamsEncode(message))
-		fmt.Println("sign:", sign)
-		fmt.Println("path:", path)
 	}
 	//创建请求
 	client := resty.New()
@@ -200,17 +176,11 @@ func PrivatePut(urlStr string, jsonParams string) interface{} {
 		message := fmt.Sprintf("timestamp=%d", timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
 		path = fmt.Sprintf("%s?timestamp=%d&signature=%s", urlStr, timestamp, sign)
-		fmt.Println("message:", message)
-		fmt.Println("sign:", sign)
-		fmt.Println("path:", path)
 	} else {
 		strParams := JsonToParamStr(jsonParams)
 		message := fmt.Sprintf("%s&timestamp=%d", strParams, timestamp)
 		sign := ComputeHmac256(message, config.Config.MexcSecretKey)
 		path = fmt.Sprintf("%s?%s&timestamp=%d&signature=%s", urlStr, strParams, timestamp, sign)
-		fmt.Println("message:", ParamsEncode(message))
-		fmt.Println("sign:", sign)
-		fmt.Println("path:", path)
 	}
 	//创建请求
 	client := resty.New()

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -63,6 +64,13 @@ type WsBookTickerEvent struct {
 	Timestamp int64  `json:"t"`
 }
 
+type Data struct {
+	AskQty   string `json:"A"` //卖单最优挂单数量
+	BidQty   string `json:"B"` //买单最优挂单数量
+	AskPrice string `json:"a"` //卖单最优挂单价格`
+	BidPrice string `json:"b"` //买单最优挂单价格
+}
+
 type WsPrivateAccountEvent struct {
 	Params    string `json:"params"`
 	Data      `json:"d"`
@@ -71,17 +79,22 @@ type WsPrivateAccountEvent struct {
 
 type WsPrivateDealsEvent struct {
 	Params    string `json:"params"`
-	Data      `json:"d"`
+	DealsData `json:"d"`
 	Symbol    string `json:"s"`
 	Timestamp int64  `json:"t"`
 }
 
-type Data struct {
-	AskQty        string `json:"A"` //卖单最优挂单数量
-	BidQty        string `json:"B"` //买单最优挂单数量
-	AskPrice      string `json:"a"` //卖单最优挂单价格`
-	BidPrice      string `json:"b"` //买单最优挂单价格
-	OrderId       string `json:"i"`
+type DealsData struct {
+	RemainAmount   string `json:"A"`  // 实际剩余金额
+	RemainQty      string `json:"V"`  // 实际剩余数量
+	SideType       int    `json:"S"`  // 订单方向
+	CntOrderAmount string `json:"a"`  // 下单总金额
+	OrderId        string `json:"i"`  // 订单ID
+	Status         int    `json:"s"`  // 订单状态
+	Price          string `json:"p"`  // 下单价格
+	Qty            string `json:"v"`  // 下单数量
+	CntQty         string `json:"cv"` // 累计成交数量
+	CntAmount      string `json:"ca"` // 累计成交金额
 }
 
 type WsBookTickerHandler func(event *WsBookTickerEvent)
@@ -167,6 +180,27 @@ func WsAccountInfoServe(handler WsPrivateAccountHandler, errHandler ErrHandler) 
 
 }
 
+func StartWsDealsInfoServer(handler WsPrivateDealsHandler, errHandler ErrHandler) (
+	chan struct{},
+	chan struct{},
+) {
+	var (
+		err   error
+		doneC chan struct{}
+		stopC chan struct{}
+	)
+	for {
+		doneC, stopC, err = WsDealsInfoServe(handler, errHandler)
+		if err == nil {
+			break
+		}
+		logrus.Error(err)
+	}
+	logrus.Info("Connect to mexc deals info websocket server successfully.")
+
+	return doneC, stopC
+}
+
 // 现货账户成交
 func WsDealsInfoServe(handler WsPrivateDealsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}, error) {
 	var params string = ""
@@ -180,7 +214,6 @@ func WsDealsInfoServe(handler WsPrivateDealsHandler, errHandler ErrHandler) (cha
 		return nil, nil, nil
 	}
 	listenkey := listenKeyResponse.ListenKey
-	fmt.Println("new listenkey:", listenkey)
 
 	go func() {
 		// 每30秒发送一个PUT

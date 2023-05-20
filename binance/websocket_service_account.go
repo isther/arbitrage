@@ -4,8 +4,10 @@ import (
 	// "time"
 	"fmt"
 	"net/url"
+
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type AccountStatusParams struct {
@@ -14,6 +16,7 @@ type AccountStatusParams struct {
 	Signature string `json:"signature"`
 }
 type WsUserDataParams struct{}
+
 // AccountEvent define account info
 type AccountEvent struct {
 	MakerCommission            int64           `json:"makerCommission"`
@@ -66,7 +69,7 @@ func NewAccountStatus(apiKey, secretKey string) *WsApiRequest {
 	}
 }
 
-func WsUserData(apiKey string, secretKey string)  {
+func WsUserData(apiKey string, secretKey string) {
 
 	var (
 		params    = url.Values{}
@@ -88,10 +91,32 @@ func WsUserData(apiKey string, secretKey string)  {
 
 	if err != nil {
 		fmt.Println(err)
-		return 
+		return
 	}
 	stopC <- struct{}{}
 	<-doneC
 
-	return 
+	return
+}
+
+func StartWsUserData(listenKey string, wsHandler binancesdk.WsUserDataHandler, errHandler binancesdk.ErrHandler) (
+	chan struct{},
+	chan struct{},
+) {
+	var (
+		err   error
+		doneC chan struct{}
+		stopC chan struct{}
+	)
+
+	for {
+		doneC, stopC, err = binancesdk.WsUserDataServe(listenKey, wsHandler, errHandler)
+		if err == nil {
+			break
+		}
+		logrus.Error(err)
+	}
+	logrus.Info("Connect to binance user-data websocket server successfully.")
+
+	return doneC, stopC
 }

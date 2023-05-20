@@ -70,56 +70,16 @@ func NewArbitrageManager(symbolPairs SymbolPair) *ArbitrageManager {
 	return &b
 }
 
-func (b *ArbitrageManager) Run(
-	openBinanceOrderIdCh chan string,
-	closeBinanceOrderIdCh chan string,
-) {
+func (b *ArbitrageManager) Start() {
 	var (
-		started              atomic.Bool
-		startBinanceWsDoneCh = make(chan struct{})
-		startMexcWsDoneCh    = make(chan struct{})
+		started atomic.Bool
+		wg      sync.WaitGroup
 	)
 
 	started.Store(false)
-	go func() {
-		restartCh := make(chan struct{})
-		for {
-			_, _ = b.websocketApiServiceManager.StartWsApi(
-				func(msg []byte) {
-					wsApiEvent, method, err := b.websocketApiServiceManager.ParseWsApiEvent(msg)
-					if err != nil {
-						logrus.Error("Failed to parse wsApiEvent:", err)
-						return
-					}
-
-					switch method {
-					case binance.OrderTrade:
-						if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "C") ||
-							strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "FC") {
-							logrus.Infof("[平仓] Price: %s Qty: %s",
-								wsApiEvent.OrderTradeResponse.Price,
-								wsApiEvent.OrderTradeResponse.OrigQuantity,
-							)
-						} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
-							logrus.Infof("[开仓] Price: %s Qty: %s",
-								wsApiEvent.OrderTradeResponse.Price,
-								wsApiEvent.OrderTradeResponse.OrigQuantity,
-							)
-						}
-					default:
-						logrus.Info(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
-					}
-				},
-				func(err error) {
-					restartCh <- struct{}{}
-					// panic(err)
-				},
-			)
-			<-restartCh
-		}
-	}()
 
 	go func() {
+		wg.Add(1)
 		for {
 			doneC, stopC, err := b.startBinanceBookTickerWebsocket()
 			if err != nil {
@@ -128,7 +88,7 @@ func (b *ArbitrageManager) Run(
 			logrus.Info("[BookTicker] Start binance websocket")
 
 			if !started.Load() {
-				startBinanceWsDoneCh <- struct{}{}
+				wg.Done()
 			}
 
 			select {
@@ -143,6 +103,7 @@ func (b *ArbitrageManager) Run(
 	}()
 
 	go func() {
+		wg.Add(1)
 		for {
 			doneC, stopC, err := b.startMexcBookTickerWebsocket()
 			if err != nil {
@@ -151,7 +112,7 @@ func (b *ArbitrageManager) Run(
 			logrus.Info("[BookTicker] Start mexc websocket")
 
 			if !started.Load() {
-				startMexcWsDoneCh <- struct{}{}
+				wg.Done()
 			}
 
 			select {
@@ -165,17 +126,51 @@ func (b *ArbitrageManager) Run(
 		}
 	}()
 
-	<-startBinanceWsDoneCh
-	<-startMexcWsDoneCh
+	go func() {
+		wg.Add(1)
+		restartCh := make(chan struct{})
+		for {
+			_, _ = b.websocketApiServiceManager.StartWsApi(
+				func(msg []byte) {
+					wsApiEvent, method, err := b.websocketApiServiceManager.ParseWsApiEvent(msg)
+					if err != nil {
+						logrus.Error("Failed to parse wsApiEvent:", err)
+						return
+					}
+
+					switch method {
+					case binance.OrderTrade:
+						if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "C") ||
+							strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "FC") {
+						} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
+						}
+					default:
+						logrus.Info(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+					}
+				},
+				func(err error) {
+					restartCh <- struct{}{}
+					// panic(err)
+				},
+			)
+			if !started.Load() {
+				wg.Done()
+			}
+
+			<-restartCh
+		}
+	}()
+
+	wg.Wait()
 	started.Store(true)
 }
 
-func (b *ArbitrageManager) StartTask(task *Task, openMexcOrderIdCh, closeMexcOrderIdCh chan string) {
+func (b *ArbitrageManager) StartTask(task *Task, OrderIDsCh chan OrderIds) {
 	task.run(b.websocketApiServiceManager.RequestCh,
-		openMexcOrderIdCh, closeMexcOrderIdCh,
 		b.binanceSymbolEventCh,
 		b.stableCoinSymbolEventCh,
 		b.mexcSymbolEventCh,
+		OrderIDsCh,
 	)
 }
 

@@ -16,22 +16,25 @@ var (
 	}
 
 	arbitrageManager = binancemexc.NewArbitrageManager(symbolPair)
-	orderManager     = binancemexc.NewOrderManager()
+	account          = binancemexc.NewAccount(symbolPair)
 )
 
 func init() {
 	config.Load("config.yaml")
 
+	// Config
 	// Keep ws alive
 	binance.WebsocketKeepalive = true
 	binancesdk.WebsocketKeepalive = true
+	// log format
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04:05.000",
 	})
 
-	arbitrageManager.Run(orderManager.OpenBinanceOrderIdCh, orderManager.CloseBinanceOrderIdCh)
-	orderManager.Run()
+	// Start
+	arbitrageManager.Start()
+	account.Start()
 }
 
 func main() {
@@ -46,7 +49,6 @@ func main() {
 			config.Config.MinRatio,
 			config.Config.MaxRatio,
 		),
-		orderManager.OpenMexcOrderIdCh,
-		orderManager.CloseMexcOrderIdCh,
+		account.OrderIDsCh,
 	)
 }
