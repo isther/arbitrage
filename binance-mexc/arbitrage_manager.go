@@ -9,7 +9,9 @@ import (
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
+	"github.com/isther/arbitrage/config"
 	"github.com/isther/arbitrage/mexc"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -146,7 +148,18 @@ func (b *ArbitrageManager) Start() {
 						} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
 						}
 					case binance.ServerTime:
-						logrus.Infof("%v", wsApiEvent.ServerTime.ServerTime-time.Now().UnixMilli())
+						if decimal.NewFromInt(time.Now().UnixMilli() - wsApiEvent.ServerTime.ServerTime).
+							GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
+							go func() {
+								if !Paused.Load() {
+									pauseCh <- struct{}{}
+									logrus.Warn("币安超时，已暂停")
+									time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
+									logrus.Warn("币安超时暂停结束")
+									unPauseCh <- struct{}{}
+								}
+							}()
+						}
 					default:
 						logrus.Debug(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
 					}
@@ -171,6 +184,25 @@ func (b *ArbitrageManager) Start() {
 	go func() {
 		for {
 			b.websocketApiServiceManager.RequestCh <- binance.NewServerTime()
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	go func() {
+		for {
+			logrus.Info(time.Now().UnixMilli() - mexc.ServerTime())
+			if decimal.NewFromInt(time.Now().UnixMilli() - mexc.ServerTime()).
+				GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
+				go func() {
+					if !Paused.Load() {
+						pauseCh <- struct{}{}
+						logrus.Warn("抹茶超时，已暂停")
+						time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
+						logrus.Warn("抹茶超时暂停结束")
+						unPauseCh <- struct{}{}
+					}
+				}()
+			}
 			time.Sleep(1 * time.Second)
 		}
 	}()

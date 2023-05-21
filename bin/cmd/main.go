@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
 	binancemexc "github.com/isther/arbitrage/binance-mexc"
@@ -45,6 +47,9 @@ func init() {
 	go binancemexc.StartCalculateKline()
 	arbitrageManager.Start()
 	account.Start()
+
+	logrus.Info("启动中...")
+	time.Sleep(1 * time.Second)
 }
 
 func main() {

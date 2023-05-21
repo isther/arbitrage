@@ -46,7 +46,9 @@ params:
   profitRatio: 0.1 # base 10000
   closeTimeOut: 1000 # ms
   klineRatio: 5.0 # base 10000
+  klinePauseDuration: 500 # ms
   clientTimeOut: 500 # ms
+  clientTimeOutPauseDuration: 500 # ms
 `
 )
 
@@ -73,13 +75,15 @@ type Key struct {
 }
 
 type Params struct {
-	Number        int64   `json:"number" yaml:"number"`
-	MinRatio      float64 `json:"minRatio" yaml:"minRatio"`         // base 10000
-	MaxRatio      float64 `json:"maxRatio" yaml:"maxRatio"`         // base 10000
-	ProfitRatio   float64 `json:"profitRatio" yaml:"profitRatio"`   // base 10000
-	CloseTimeOut  int64   `json:"closeTimeOut" yaml:"closeTimeOut"` // ms
-	KlineRatio    float64 `json:"klineRatio" yaml:"klineRatio"`     // base 10000
-	ClientTimeOut int64   `json:"clientTimeOut" yaml:"clientTimeOut"`
+	Number                     int64   `json:"number" yaml:"number"`
+	MinRatio                   float64 `json:"minRatio" yaml:"minRatio"`                                     // base 10000
+	MaxRatio                   float64 `json:"maxRatio" yaml:"maxRatio"`                                     // base 10000
+	ProfitRatio                float64 `json:"profitRatio" yaml:"profitRatio"`                               // base 10000
+	CloseTimeOut               int64   `json:"closeTimeOut" yaml:"closeTimeOut"`                             // ms
+	KlineRatio                 float64 `json:"klineRatio" yaml:"klineRatio"`                                 // base 10000
+	KlinePauseDuration         int64   `json:"klinePauseDuration" yaml:"klinePauseDuration"`                 // ms
+	ClientTimeOut              int64   `json:"clientTimeOut" yaml:"clientTimeOut"`                           // ms
+	ClientTimeOutPauseDuration int64   `json:"clientTimeOutPauseDuration" yaml:"clientTimeOutPauseDuration"` // ms
 }
 
 type DingDing struct {

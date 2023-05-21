@@ -155,9 +155,9 @@ func (t *Task) trade(
 			// Check
 			// 1. 网络延达超过?ms，暂停套利?秒
 			// 2. BTC振福超过?万，暂停套利?秒
-			// if Paused.Load() {
-			// 	continue
-			// }
+			if Paused.Load() {
+				continue
+			}
 			t.isOpen.Store(true)
 			ok, t.closeRatio, t.openStablePrice, t.openBinancePrice, t.openMexcPrice,
 				orderIDs.OpenBinanceID, orderIDs.OpenMexcID = t.open(binanceWsReqCh)

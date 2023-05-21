@@ -1,17 +1,5 @@
 package mexc
 
-const (
-	baseHttpURL  = "https://api.mexc.com"
-	ListenKeyApi = "/api/v3/userDataStream"
-)
-
-func getHttpEndpoint() string {
-	return baseHttpURL
-}
-func getNewListenKeyApi() string {
-	return ListenKeyApi
-}
-
 // WS ListenKey
 //
 // 生成 Listen Key  Create a ListenKey

@@ -2,6 +2,7 @@ package binancemexc
 
 import (
 	"sync/atomic"
+	"time"
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
@@ -14,7 +15,7 @@ var (
 	Paused         atomic.Bool
 	klineRatioBase = decimal.NewFromInt(10000)
 	pauseCh        = make(chan struct{})
-	unpauseCh      = make(chan struct{})
+	unPauseCh      = make(chan struct{})
 )
 
 func init() {
@@ -27,7 +28,7 @@ func Pause() {
 		select {
 		case <-pauseCh:
 			Paused.Store(true)
-		case <-unpauseCh:
+		case <-unPauseCh:
 			Paused.Store(false)
 		}
 	}
@@ -47,6 +48,10 @@ func StartCalculateKline() {
 					go func() {
 						if !Paused.Load() {
 							pauseCh <- struct{}{}
+							logrus.Warn("BTC振幅过高，已暂停")
+							time.Sleep(time.Duration(config.Config.KlinePauseDuration) * time.Millisecond)
+							logrus.Warn("BTC振幅过高暂停结束")
+							unPauseCh <- struct{}{}
 						}
 					}()
 				}
