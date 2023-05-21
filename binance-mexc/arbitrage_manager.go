@@ -189,6 +189,40 @@ func (b *ArbitrageManager) Start() {
 	}()
 
 	go func() {
+		var restartCh = make(chan struct{})
+		for {
+			_, _ = binance.StartKlineInfo(
+				"BTCTUSD",
+				"1m",
+				func(event *binancesdk.WsKlineEvent) {
+					high, _ := decimal.NewFromString(event.Kline.High)
+					low, _ := decimal.NewFromString(event.Kline.Low)
+
+					if high.Div(low).Sub(decimal.NewFromInt(1)).Mul(klineRatioBase).GreaterThanOrEqual(decimal.NewFromFloat(config.Config.KlineRatio).Div(klineRatioBase)) {
+						go func() {
+							if !Paused.Load() {
+								pauseCh <- struct{}{}
+								logrus.Warn("BTC振幅过高，已暂停")
+								time.Sleep(time.Duration(config.Config.KlinePauseDuration) * time.Millisecond)
+								logrus.Warn("BTC振幅过高暂停结束")
+								unPauseCh <- struct{}{}
+							}
+						}()
+					}
+				},
+				func(err error) {
+					if err != nil {
+						logrus.WithFields(logrus.Fields{"server": "kline"}).Error(err)
+						restartCh <- struct{}{}
+					}
+				},
+			)
+
+			<-restartCh
+		}
+	}()
+
+	go func() {
 		for {
 			serverTime := mexc.ServerTime()
 			if decimal.NewFromInt(time.Now().UnixMilli() - serverTime).
