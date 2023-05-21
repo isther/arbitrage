@@ -198,7 +198,8 @@ func (b *ArbitrageManager) Start() {
 					high, _ := decimal.NewFromString(event.Kline.High)
 					low, _ := decimal.NewFromString(event.Kline.Low)
 
-					if high.Div(low).Sub(decimal.NewFromInt(1)).Mul(klineRatioBase).GreaterThanOrEqual(decimal.NewFromFloat(config.Config.KlineRatio).Div(klineRatioBase)) {
+					if high.Div(low).Sub(decimal.NewFromInt(1)).Mul(klineRatioBase).
+						GreaterThanOrEqual(decimal.NewFromFloat(config.Config.KlineRatio)) {
 						go func() {
 							if !Paused.Load() {
 								pauseCh <- struct{}{}
