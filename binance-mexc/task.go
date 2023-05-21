@@ -103,7 +103,7 @@ func (t *Task) run(
 			go func() { doCh <- struct{}{} }()
 			time.Sleep(1 * time.Millisecond)
 		case <-t.stopCh:
-			logrus.Info("Stop")
+			logrus.Debug("Stop")
 			return
 		}
 	}
@@ -181,7 +181,7 @@ func (t *Task) open(
 			binanceWsReqCh,
 		); ok {
 		t.isOpen.Store(false)
-		logrus.Info("--------------> Mode2 平仓")
+		logrus.Debug("--------------> Mode2 平仓")
 		return true, ratio, stableSymbolPrice, binanceSymbolPrice, mexcSymbolPrice, binanceOrderID, mexcOrderID
 	} else if ok, ratio, stableSymbolPrice, binanceSymbolPrice, mexcSymbolPrice,
 		binanceOrderID, mexcOrderID :=
@@ -189,7 +189,7 @@ func (t *Task) open(
 			binanceWsReqCh,
 		); ok {
 		t.isOpen.Store(false)
-		logrus.Info("--------------> Mode1 平仓")
+		logrus.Debug("--------------> Mode1 平仓")
 		return true, ratio, stableSymbolPrice, binanceSymbolPrice, mexcSymbolPrice, binanceOrderID, mexcOrderID
 	}
 
@@ -209,7 +209,7 @@ func (t *Task) openMode1(
 	ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
 	if ratioMode1.GreaterThanOrEqual(t.minRatio) && ratioMode1.LessThanOrEqual(t.maxRatio) {
 		t.mode.Store(1)
-		logrus.Info(t.ratioLog(ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice))
+		// logrus.Debug(t.ratioLog(ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice))
 		// 币安把BTC卖出为TUSD、抹茶把USDT买入为BTC；
 		// stableSymbolBidQty, _ := decimal.NewFromString(stableEvent.BestBidQty)   // TUSDUSDT
 		// mexcSymbolAskQty, _ := decimal.NewFromString(mexcEvent.Data.AskQty)      // BTCUSDT
@@ -251,7 +251,7 @@ func (t *Task) openMode2(
 	ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
 	if ratioMode2.GreaterThanOrEqual(t.minRatio) && ratioMode2.LessThanOrEqual(t.maxRatio) {
 		t.mode.Store(2)
-		logrus.Info(t.ratioLog(ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice))
+		// logrus.Debug(t.ratioLog(ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice))
 		// 币安把TUSD买入为BTC、抹茶把BTC卖出为USDT；
 		// stableSymbolAskQty, _ := decimal.NewFromString(stableEvent.BestAskQty)   // TUSDUSDT
 		// binanceSymbolAskQty, _ := decimal.NewFromString(binanceEvent.BestAskQty) // BTCTUSD
@@ -299,7 +299,7 @@ func (t *Task) close(
 				mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 
 				if ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice); ratioMode2.GreaterThanOrEqual(ratio) {
-					logrus.Info(t.ratioLog(ratioMode2, t.openStablePrice, binanceSymbolAskPrice, mexcSymbolBidPrice))
+					// logrus.Debug(t.ratioLog(ratioMode2, t.openStablePrice, binanceSymbolAskPrice, mexcSymbolBidPrice))
 					t.profitLog(binanceSymbolAskPrice, mexcSymbolBidPrice)
 
 					// Trade
@@ -320,7 +320,7 @@ func (t *Task) close(
 				binanceSymbolBidPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestBidPrice)
 
 				if ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice); ratioMode1.GreaterThanOrEqual(ratio) {
-					logrus.Info(t.ratioLog(ratioMode1, t.openStablePrice, binanceSymbolBidPrice, mexcSymbolAskPrice))
+					// logrus.Debug(t.ratioLog(ratioMode1, t.openStablePrice, binanceSymbolBidPrice, mexcSymbolAskPrice))
 					t.profitLog(binanceSymbolBidPrice, mexcSymbolAskPrice)
 
 					// Trade
@@ -350,14 +350,14 @@ func (t *Task) foreceClose(
 		mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 
 		// Log
-		logrus.Info("[强平]",
-			t.ratioLog(
-				t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice),
-				t.openStablePrice,
-				binanceSymbolAskPrice,
-				mexcSymbolBidPrice,
-			),
-		)
+		// logrus.Info("[强平]",
+		// 	t.ratioLog(
+		// 		t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice),
+		// 		t.openStablePrice,
+		// 		binanceSymbolAskPrice,
+		// 		mexcSymbolBidPrice,
+		// 	),
+		// )
 		t.profitLog(binanceSymbolAskPrice, mexcSymbolBidPrice)
 
 		mexcOrderID = t.tradeMode2(
@@ -373,14 +373,14 @@ func (t *Task) foreceClose(
 		mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 
 		// Log
-		logrus.Info("[强平]",
-			t.ratioLog(
-				t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice),
-				t.openStablePrice,
-				binanceSymbolBidPrice,
-				mexcSymbolAskPrice,
-			),
-		)
+		// logrus.Debug("[强平]",
+		// 	t.ratioLog(
+		// 		t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice),
+		// 		t.openStablePrice,
+		// 		binanceSymbolBidPrice,
+		// 		mexcSymbolAskPrice,
+		// 	),
+		// )
 		t.profitLog(binanceSymbolBidPrice, mexcSymbolAskPrice)
 
 		mexcOrderID = t.tradeMode1(
@@ -525,7 +525,8 @@ func (t *Task) profitLog(closeBinancePrice, closeMexcPrice decimal.Decimal) {
 		panic("Invalid mode")
 	}
 
-	msg := fmt.Sprintf("[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[预期盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
+	msg := fmt.Sprintf("模式%d \n[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[预期盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
+		t.mode.Load(),
 		t.openBinancePrice.String(), t.openMexcPrice.String(),
 		closeBinancePrice.String(), closeMexcPrice.String(),
 		tusdProfit.String(), usdtProfit.String(),

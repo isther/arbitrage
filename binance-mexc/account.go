@@ -151,7 +151,7 @@ func (a *Account) Start() {
 	<-startBinanceWsDone
 	<-startMexcWsDone
 	started.Store(true)
-	logrus.WithFields(logrus.Fields{"server": "Account"}).Info("Start account")
+	logrus.WithFields(logrus.Fields{"server": "Account"}).Debug("Start account")
 }
 
 func (a *Account) accountUpdate(accountUpdates binancesdk.WsAccountUpdateList) {
@@ -223,7 +223,8 @@ func (a *Account) profitLog(orderIds OrderIds) {
 		panic("Invalid mode")
 	}
 
-	msg := fmt.Sprintf("[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[实际盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计实际结果] %s",
+	msg := fmt.Sprintf("模式%d \n[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[实际盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计实际结果] %s",
+		orderIds.mode,
 		openBinanceOrder.Price.String(), openMexcOrder.Price.String(),
 		closeBinanceOrder.Price.String(), closeMexcOrder.Price.String(),
 		tusdProfit.String(), usdtProfit.String(),

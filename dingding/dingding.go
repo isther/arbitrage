@@ -1,15 +1,11 @@
 package dingding
 
 import (
+	"fmt"
+
 	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
 	"github.com/sirupsen/logrus"
 )
-
-var ()
-
-func hh() {
-	logrus.AddHook(&DingDingBotHook{})
-}
 
 type DingDingBotHook struct {
 	logBot   *DingDingBot
@@ -33,14 +29,15 @@ func NewDingDingBotHook(
 }
 
 func (hook *DingDingBotHook) Fire(entry *logrus.Entry) error {
+	msg := fmt.Sprintf("\n%s \n%s", entry.Time.Format("2006-01-02 15:04:05.000"), entry.Message)
 	switch entry.Level {
 	case logrus.PanicLevel:
 	case logrus.FatalLevel:
 	case logrus.ErrorLevel:
 	case logrus.WarnLevel:
-		hook.errorBot.MsgCh <- dingtalk.NewTextMessage().SetContent(entry.Message)
+		hook.errorBot.MsgCh <- dingtalk.NewTextMessage().SetContent(msg)
 	case logrus.InfoLevel:
-		hook.logBot.MsgCh <- dingtalk.NewTextMessage().SetContent(entry.Message)
+		hook.logBot.MsgCh <- dingtalk.NewActionCardMessage().SetIndependentJump("Msg", msg, nil, "", "")
 	case logrus.DebugLevel:
 	default:
 		return nil

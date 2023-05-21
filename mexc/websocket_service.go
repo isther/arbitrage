@@ -199,7 +199,7 @@ func StartWsDealsInfoServer(handler WsPrivateDealsHandler, errHandler ErrHandler
 		}
 		logrus.Error(err)
 	}
-	logrus.Info("Connect to mexc deals info websocket server successfully.")
+	logrus.Debug("Connect to mexc deals info websocket server successfully.")
 
 	return doneC, stopC
 }

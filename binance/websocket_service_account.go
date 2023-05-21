@@ -115,7 +115,7 @@ func StartWsUserData(listenKey string, wsHandler binancesdk.WsUserDataHandler, e
 		}
 		logrus.Error(err)
 	}
-	logrus.Info("Connect to binance user-data websocket server successfully.")
+	logrus.Debug("Connect to binance user-data websocket server successfully.")
 
 	return doneC, stopC
 }

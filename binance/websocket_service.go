@@ -101,7 +101,7 @@ func NewWebsocketServiceManager() *WebsocketServiceManager {
 }
 
 func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}) {
-	logrus.Info("Start binance websocket api service.")
+	logrus.Debug("Start binance websocket api service.")
 	var (
 		msgC  chan []byte
 		doneC chan struct{}
@@ -124,7 +124,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 		cnt++
 		continue
 	}
-	logrus.Info("Connect to websocket server successfully.")
+	logrus.Debug("Connect to websocket server successfully.")
 
 	go func() {
 		for {

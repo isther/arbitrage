@@ -85,7 +85,7 @@ func (b *ArbitrageManager) Start() {
 			if err != nil {
 				continue
 			}
-			logrus.Info("[BookTicker] Start binance websocket")
+			logrus.Debug("[BookTicker] Start binance websocket")
 
 			if !started.Load() {
 				wg.Done()
@@ -93,9 +93,9 @@ func (b *ArbitrageManager) Start() {
 
 			select {
 			case <-b.restartCh:
-				logrus.Info("[BookTicker] Restart websocket")
+				logrus.Debug("[BookTicker] Restart websocket")
 			case <-doneC:
-				logrus.Info("[BookTicker] Done")
+				logrus.Debug("[BookTicker] Done")
 			}
 
 			stopC <- struct{}{}
@@ -109,7 +109,7 @@ func (b *ArbitrageManager) Start() {
 			if err != nil {
 				continue
 			}
-			logrus.Info("[BookTicker] Start mexc websocket")
+			logrus.Debug("[BookTicker] Start mexc websocket")
 
 			if !started.Load() {
 				wg.Done()
@@ -117,9 +117,9 @@ func (b *ArbitrageManager) Start() {
 
 			select {
 			case <-b.restartCh:
-				logrus.Warnf("[BookTicker] Restart mexc websocket")
+				logrus.Debug("[BookTicker] Restart mexc websocket")
 			case <-doneC:
-				logrus.Info("[BookTicker] Done")
+				logrus.Debug("[BookTicker] Done")
 			}
 
 			stopC <- struct{}{}
@@ -145,7 +145,7 @@ func (b *ArbitrageManager) Start() {
 						} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
 						}
 					default:
-						logrus.Info(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+						logrus.Debug(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
 					}
 				},
 				func(err error) {
