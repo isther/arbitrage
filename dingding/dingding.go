@@ -3,7 +3,6 @@ package dingding
 import (
 	"fmt"
 
-	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,9 +34,9 @@ func (hook *DingDingBotHook) Fire(entry *logrus.Entry) error {
 	case logrus.FatalLevel:
 	case logrus.ErrorLevel:
 	case logrus.WarnLevel:
-		hook.errorBot.MsgCh <- dingtalk.NewTextMessage().SetContent(msg)
+		hook.errorBot.MsgCh <- msg
 	case logrus.InfoLevel:
-		hook.logBot.MsgCh <- dingtalk.NewActionCardMessage().SetIndependentJump("Msg", msg, nil, "", "")
+		hook.logBot.MsgCh <- msg
 	case logrus.DebugLevel:
 	default:
 		return nil

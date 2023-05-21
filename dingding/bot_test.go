@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
 	"github.com/isther/arbitrage/config"
 )
 
@@ -18,7 +17,12 @@ func TestDingDingBot(t *testing.T) {
 	)
 	go dingBot.Start()
 
-	dingBot.MsgCh <- dingtalk.NewMarkdownMessage().SetMarkdown("Hello", "Test")
+	go func() {
+		for {
+			time.Sleep(100 * time.Millisecond)
+			dingBot.MsgCh <- "Hello\n"
+		}
+	}()
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 }
