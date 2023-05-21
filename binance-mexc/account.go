@@ -1,13 +1,16 @@
 package binancemexc
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
+	"github.com/isther/arbitrage/dingding"
 	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -150,6 +153,7 @@ func (a *Account) Start() {
 	<-startBinanceWsDone
 	<-startMexcWsDone
 	started.Store(true)
+	logrus.WithFields(logrus.Fields{"server": "Account"}).Info("Start account")
 }
 
 func (a *Account) accountUpdate(accountUpdates binancesdk.WsAccountUpdateList) {
@@ -221,12 +225,14 @@ func (a *Account) profitLog(orderIds OrderIds) {
 		panic("Invalid mode")
 	}
 
-	logrus.Infof("\n[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[实际盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
+	msg := fmt.Sprintf("\n[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[实际盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
 		openBinanceOrder.Price.String(), openMexcOrder.Price.String(),
 		closeBinanceOrder.Price.String(), closeMexcOrder.Price.String(),
 		tusdProfit.String(), usdtProfit.String(),
-		tusdProfit.Add(usdtProfit).String(),
-	)
+		tusdProfit.Add(usdtProfit).String())
+
+	logrus.Infof(msg)
+	dingding.LogBot.MsgCh <- dingtalk.NewTextMessage().SetContent(msg)
 
 }
 

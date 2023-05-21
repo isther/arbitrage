@@ -5,6 +5,7 @@ import (
 	"github.com/isther/arbitrage/binance"
 	binancemexc "github.com/isther/arbitrage/binance-mexc"
 	"github.com/isther/arbitrage/config"
+	"github.com/isther/arbitrage/dingding"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,6 +27,14 @@ func init() {
 	// Keep ws alive
 	binance.WebsocketKeepalive = true
 	binancesdk.WebsocketKeepalive = true
+
+	// DingDingBot
+	dingding.Init(
+		config.Config.LogDingDingConfig.AccessToken, config.Config.LogDingDingConfig.Secrect,
+		config.Config.ErrorDingDingConfig.AccessToken, config.Config.ErrorDingDingConfig.Secrect,
+		100,
+	)
+
 	// log format
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,
