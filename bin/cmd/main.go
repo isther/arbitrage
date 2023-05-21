@@ -34,7 +34,7 @@ func init() {
 	logrus.AddHook(dingding.NewDingDingBotHook(
 		config.Config.LogDingDingConfig.AccessToken, config.Config.LogDingDingConfig.Secrect,
 		config.Config.ErrorDingDingConfig.AccessToken, config.Config.ErrorDingDingConfig.Secrect,
-		100,
+		10000,
 	))
 
 	// Set log format

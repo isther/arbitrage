@@ -1,6 +1,8 @@
 package dingding
 
 import (
+	"time"
+
 	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
 )
 
@@ -20,5 +22,6 @@ func (d *DingDingBot) Start() {
 	for {
 		msg := <-d.MsgCh
 		d.client.Send(msg)
+		time.Sleep(3001 * time.Millisecond)
 	}
 }
