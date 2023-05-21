@@ -47,7 +47,7 @@ func init() {
 	arbitrageManager.Start()
 	account.Start()
 
-	logrus.Info("启动中...")
+	logrus.Warn("启动中...")
 	time.Sleep(1 * time.Second)
 }
 

@@ -115,6 +115,8 @@ func (t *Task) Init() {
 
 	number++
 	if config.Config.Number == number {
+		logrus.Warn("软件已停止")
+		time.Sleep(5 * time.Second)
 		os.Exit(-1)
 	}
 }

@@ -28,7 +28,7 @@ func NewDingDingBotHook(
 }
 
 func (hook *DingDingBotHook) Fire(entry *logrus.Entry) error {
-	msg := fmt.Sprintf("\n%s \n%s", entry.Time.Format("2006-01-02 15:04:05.000"), entry.Message)
+	msg := fmt.Sprintf("\n%s \n%s\n", entry.Time.Format("2006-01-02 15:04:05.000"), entry.Message)
 	switch entry.Level {
 	case logrus.PanicLevel:
 	case logrus.FatalLevel:

@@ -28,8 +28,8 @@ func (d *DingDingBot) Start() {
 	)
 
 	go func() {
+		time.Sleep(1000 * time.Millisecond)
 		for {
-			time.Sleep(3001 * time.Millisecond)
 			func() {
 				L.Lock()
 				defer L.Unlock()
@@ -38,6 +38,7 @@ func (d *DingDingBot) Start() {
 					msg = ""
 				}
 			}()
+			time.Sleep(3001 * time.Millisecond)
 		}
 	}()
 
