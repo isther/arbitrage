@@ -2,6 +2,7 @@ package binancemexc
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -9,6 +10,7 @@ import (
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
+	"github.com/isther/arbitrage/config"
 	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -61,6 +63,13 @@ func (a *Account) Start() {
 		for {
 			orderIDs := <-a.OrderIDsCh
 			a.profitLog(orderIDs)
+
+			number++
+			if config.Config.Number == number {
+				logrus.Warn("软件已停止")
+				time.Sleep(3001 * time.Millisecond)
+				os.Exit(-1)
+			}
 		}
 	}()
 

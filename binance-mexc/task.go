@@ -3,7 +3,6 @@ package binancemexc
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,10 +13,6 @@ import (
 	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-)
-
-var (
-	number int64 = 0
 )
 
 const base = 10000
@@ -112,13 +107,6 @@ func (t *Task) run(
 func (t *Task) Init() {
 	time.Sleep(10 * time.Second)
 	t.mode.Store(0)
-
-	number++
-	if config.Config.Number == number {
-		logrus.Warn("软件已停止")
-		time.Sleep(10 * time.Second)
-		os.Exit(-1)
-	}
 }
 
 func (t *Task) trade(
