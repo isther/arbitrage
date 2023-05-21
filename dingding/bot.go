@@ -36,9 +36,10 @@ func (d *DingDingBot) Start() {
 				if msg != "" {
 					d.client.Send(dingtalk.NewActionCardMessage().SetIndependentJump("Msg", msg, nil, "", ""))
 					msg = ""
+					time.Sleep(3001 * time.Millisecond)
 				}
 			}()
-			time.Sleep(3001 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		}
 	}()
 
