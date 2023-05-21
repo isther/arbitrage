@@ -190,8 +190,8 @@ func (b *ArbitrageManager) Start() {
 
 	go func() {
 		for {
-			logrus.Info(time.Now().UnixMilli() - mexc.ServerTime())
-			if decimal.NewFromInt(time.Now().UnixMilli() - mexc.ServerTime()).
+			serverTime := mexc.ServerTime()
+			if decimal.NewFromInt(time.Now().UnixMilli() - serverTime).
 				GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
 				go func() {
 					if !Paused.Load() {
