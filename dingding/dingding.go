@@ -12,4 +12,7 @@ func Init(
 ) {
 	LogBot = NewDingDingBot(logBotAccessToken, logBotSecrect, chLen)
 	ErrorBot = NewDingDingBot(errorBotAccessToken, errorBotSecrect, chLen)
+
+	go LogBot.Start()
+	go ErrorBot.Start()
 }
