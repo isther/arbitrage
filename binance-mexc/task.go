@@ -425,7 +425,13 @@ func (t *Task) tradeMode1(
 			mexcPrice,
 			mexcQty)
 		if err != nil {
-			logrus.Error("mexc trade error", err, " res: ", res)
+			logrus.Warnf("mexc trade error: %v", err.Error())
+			panic(err)
+		}
+		if res.Code != 200 {
+			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
+			time.Sleep(50 * time.Millisecond)
+			panic(res)
 		}
 		return res
 	}()
@@ -465,7 +471,13 @@ func (t *Task) tradeMode2(
 			mexcQty,
 		)
 		if err != nil {
-			logrus.Error("mexc trade error", err, " res: ", res)
+			logrus.Warnf("mexc trade error: %v", err.Error())
+			panic(err)
+		}
+		if res.Code != 200 {
+			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
+			time.Sleep(50 * time.Millisecond)
+			panic(res)
 		}
 		return res
 	}()

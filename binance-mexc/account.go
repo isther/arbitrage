@@ -234,29 +234,41 @@ func (a *Account) profitLog(orderIds OrderIds) {
 }
 
 func (a *Account) getOrders(orderIds OrderIds) (Order, Order, Order, Order, bool) {
-	var cnt = 0
+	var (
+		cnt = 0
+		f   = func() {
+			time.Sleep(100 * time.Millisecond)
+			cnt++
+		}
+	)
 
-	for cnt < 5 {
-		var orderCnt atomic.Int32
-		orderCnt.Store(0)
+	for cnt < 100 {
 		openBinanceOrder, ok := a.getBinanceOrder(orderIds.OpenBinanceID)
-		orderCnt.Add(boolToInt32(ok))
-
-		openMexcOrder, ok := a.getMexcOrder(orderIds.OpenMexcID)
-		orderCnt.Add(boolToInt32(ok))
-
-		closeBinanceOrder, ok := a.getBinanceOrder(orderIds.CloseBinanceID)
-		orderCnt.Add(boolToInt32(ok))
-
-		closeMexcOrder, ok := a.getMexcOrder(orderIds.CloseMexcID)
-		orderCnt.Add(boolToInt32(ok))
-
-		if orderCnt.Load() == 4 {
-			return openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, true
+		if !ok {
+			f()
+			continue
 		}
 
-		time.Sleep(time.Second)
-		cnt++
+		openMexcOrder, ok := a.getMexcOrder(orderIds.OpenMexcID)
+		if !ok {
+			f()
+			continue
+		}
+
+		closeBinanceOrder, ok := a.getBinanceOrder(orderIds.CloseBinanceID)
+		if !ok {
+			f()
+			continue
+		}
+
+		closeMexcOrder, ok := a.getMexcOrder(orderIds.CloseMexcID)
+		if !ok {
+			f()
+			continue
+		}
+
+		return openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, true
+
 	}
 	return Order{}, Order{}, Order{}, Order{}, false
 }
