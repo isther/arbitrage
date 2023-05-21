@@ -152,7 +152,7 @@ func WsAccountInfoServe(handler WsPrivateAccountHandler, errHandler ErrHandler) 
 	go func() {
 		// 每30秒发送一个PUT
 		time.Sleep(30 * time.Second)
-		params := "listenKey=" + listenkey
+		params := fmt.Sprintf(`{"listenKey": "%s"}`, listenkey)
 		KeepListenKey(params)
 	}()
 
@@ -221,7 +221,7 @@ func WsDealsInfoServe(handler WsPrivateDealsHandler, errHandler ErrHandler) (cha
 	go func() {
 		// 每30秒发送一个PUT
 		time.Sleep(30 * time.Second)
-		params := "listenkey=" + listenkey
+		params := fmt.Sprintf(`{"listenKey": "%s"}`, listenkey)
 		KeepListenKey(params)
 	}()
 
