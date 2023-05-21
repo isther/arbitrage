@@ -76,8 +76,3 @@ func TestWsApiMethod(t *testing.T) {
 
 	wg.Wait()
 }
-
-func TestKlineInfo(t *testing.T) {
-	config.Load("../config.yaml")
-	NewKlineInfo("BTCUSDT", "1s")
-}

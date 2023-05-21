@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
@@ -144,6 +145,8 @@ func (b *ArbitrageManager) Start() {
 							strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "FC") {
 						} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
 						}
+					case binance.ServerTime:
+						logrus.Infof("%v", wsApiEvent.ServerTime.ServerTime-time.Now().UnixMilli())
 					default:
 						logrus.Debug(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
 					}
@@ -163,6 +166,14 @@ func (b *ArbitrageManager) Start() {
 
 	wg.Wait()
 	started.Store(true)
+
+	// Send request to get server time
+	go func() {
+		for {
+			b.websocketApiServiceManager.RequestCh <- binance.NewServerTime()
+			time.Sleep(1 * time.Second)
+		}
+	}()
 }
 
 func (b *ArbitrageManager) StartTask(task *Task, OrderIDsCh chan OrderIds) {

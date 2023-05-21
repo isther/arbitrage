@@ -42,6 +42,7 @@ func init() {
 	})
 
 	// Start
+	go binancemexc.StartCalculateKline()
 	arbitrageManager.Start()
 	account.Start()
 }

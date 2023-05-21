@@ -124,7 +124,6 @@ func (t *Task) trade(
 	orderIDsCh chan OrderIds,
 	doCh chan struct{},
 ) {
-
 	for {
 		<-doCh
 		// stableEvent, binanceEvent := t.stableCoinSymbolEvent, t.binanceSymbolEvent
@@ -152,6 +151,13 @@ func (t *Task) trade(
 		// Open
 		for {
 			<-doCh
+
+			// Check
+			// 1. 网络延达超过?ms，暂停套利?秒
+			// 2. BTC振福超过?万，暂停套利?秒
+			// if Paused.Load() {
+			// 	continue
+			// }
 			t.isOpen.Store(true)
 			ok, t.closeRatio, t.openStablePrice, t.openBinancePrice, t.openMexcPrice,
 				orderIDs.OpenBinanceID, orderIDs.OpenMexcID = t.open(binanceWsReqCh)

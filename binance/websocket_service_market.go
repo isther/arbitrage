@@ -1,11 +1,9 @@
 package binance
 
 import (
-	"fmt"
-	"net/url"
-
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type WsApiPingParams struct{}
@@ -78,25 +76,23 @@ func NewSpotExchangeInfo() *WsApiRequest {
 	}
 }
 
-func NewKlineInfo(Symbol string, interval string) {
+func StartKlineInfo(Symbol string, interval string, wsKlineHandler binancesdk.WsKlineHandler, errHandler binancesdk.ErrHandler) (
+	chan struct{},
+	chan struct{},
+) {
 	var (
-		params    = url.Values{}
-		timestamp = currentTimestamp() - TimeOffset
+		err   error
+		doneC chan struct{}
+		stopC chan struct{}
 	)
+	for {
+		doneC, stopC, err = binancesdk.WsKlineServe(Symbol, interval, wsKlineHandler, errHandler)
+		if err == nil {
+			break
+		}
+		logrus.Error(err)
+	}
+	logrus.Debug("Connect to mexc deals info websocket server successfully.")
 
-	params.Set(string(PARAM_TIMESTAMP), fmt.Sprintf("%v", timestamp))
-
-	wsKlineHandler := func(event *binancesdk.WsKlineEvent) {
-		fmt.Println(event)
-	}
-	errHandler := func(err error) {
-		fmt.Println(err)
-	}
-	doneC, _, err := binancesdk.WsKlineServe(Symbol, interval, wsKlineHandler, errHandler)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	<-doneC
-	return
+	return doneC, stopC
 }
