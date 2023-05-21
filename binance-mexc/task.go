@@ -8,11 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
 	"github.com/isther/arbitrage/config"
-	"github.com/isther/arbitrage/dingding"
 	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -527,14 +525,13 @@ func (t *Task) profitLog(closeBinancePrice, closeMexcPrice decimal.Decimal) {
 		panic("Invalid mode")
 	}
 
-	msg := fmt.Sprintf("\n[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[预期盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
+	msg := fmt.Sprintf("[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[预期盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
 		t.openBinancePrice.String(), t.openMexcPrice.String(),
 		closeBinancePrice.String(), closeMexcPrice.String(),
 		tusdProfit.String(), usdtProfit.String(),
 		tusdProfit.Add(usdtProfit).String())
 
 	logrus.Infof(msg)
-	dingding.LogBot.MsgCh <- dingtalk.NewTextMessage().SetContent(msg)
 
 }
 

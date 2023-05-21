@@ -28,18 +28,17 @@ func init() {
 	binance.WebsocketKeepalive = true
 	binancesdk.WebsocketKeepalive = true
 
-	// DingDingBot
-	dingding.Init(
-		config.Config.LogDingDingConfig.AccessToken, config.Config.LogDingDingConfig.Secrect,
-		config.Config.ErrorDingDingConfig.AccessToken, config.Config.ErrorDingDingConfig.Secrect,
-		100,
-	)
-
-	// log format
+	// Set log format
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04:05.000",
 	})
+	// Add dingding bot hook
+	logrus.AddHook(dingding.NewDingDingBotHook(
+		config.Config.LogDingDingConfig.AccessToken, config.Config.LogDingDingConfig.Secrect,
+		config.Config.ErrorDingDingConfig.AccessToken, config.Config.ErrorDingDingConfig.Secrect,
+		100,
+	))
 
 	// Start
 	arbitrageManager.Start()

@@ -7,10 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
-	"github.com/isther/arbitrage/dingding"
 	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -225,15 +223,13 @@ func (a *Account) profitLog(orderIds OrderIds) {
 		panic("Invalid mode")
 	}
 
-	msg := fmt.Sprintf("\n[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[实际盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
+	msg := fmt.Sprintf("[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[实际盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计实际结果] %s",
 		openBinanceOrder.Price.String(), openMexcOrder.Price.String(),
 		closeBinanceOrder.Price.String(), closeMexcOrder.Price.String(),
 		tusdProfit.String(), usdtProfit.String(),
 		tusdProfit.Add(usdtProfit).String())
 
 	logrus.Infof(msg)
-	dingding.LogBot.MsgCh <- dingtalk.NewTextMessage().SetContent(msg)
-
 }
 
 func (a *Account) getOrders(orderIds OrderIds) (Order, Order, Order, Order, bool) {

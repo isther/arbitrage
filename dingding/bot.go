@@ -1,8 +1,6 @@
 package dingding
 
 import (
-	"fmt"
-
 	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
 )
 
@@ -21,7 +19,6 @@ func NewDingDingBot(accessToken, secrect string, chLen int) *DingDingBot {
 func (d *DingDingBot) Start() {
 	for {
 		msg := <-d.MsgCh
-		re, res, err := d.client.Send(msg)
-		fmt.Println(re, " ", res, " ", err)
+		d.client.Send(msg)
 	}
 }
