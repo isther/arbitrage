@@ -35,6 +35,7 @@ func (d *DingDingBot) Start() {
 		case <-ctx.Done():
 			if msg != "" {
 				d.client.Send(dingtalk.NewTextMessage().SetContent(msg))
+				msg = ""
 			}
 			cancel()
 			ctx, cancel = context.WithTimeout(context.Background(), 3000*time.Millisecond)
