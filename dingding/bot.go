@@ -22,26 +22,22 @@ func NewDingDingBot(accessToken, secrect string, chLen int) *DingDingBot {
 }
 
 func (d *DingDingBot) Start() {
-	for {
-		func() {
-			var (
-				msg         = ""
-				ctx, cancel = context.WithTimeout(context.Background(), 3000*time.Millisecond)
-			)
-			defer cancel()
+	var (
+		msg         = ""
+		ctx, cancel = context.WithTimeout(context.Background(), 3000*time.Millisecond)
+	)
+	defer cancel()
 
-			for {
-				select {
-				case m := <-d.MsgCh:
-					msg += m
-				case <-ctx.Done():
-					if msg != "" {
-						d.client.Send(dingtalk.NewTextMessage().SetContent(msg))
-						return
-					}
-				}
+	for {
+		select {
+		case m := <-d.MsgCh:
+			msg += m
+		case <-ctx.Done():
+			if msg != "" {
+				d.client.Send(dingtalk.NewTextMessage().SetContent(msg))
 			}
-		}()
-		time.Sleep(10 * time.Millisecond)
+			cancel()
+			ctx, cancel = context.WithTimeout(context.Background(), 3000*time.Millisecond)
+		}
 	}
 }
