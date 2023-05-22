@@ -103,8 +103,15 @@ func (t *Task) run(
 }
 
 func (t *Task) Init() {
-	time.Sleep(10 * time.Second)
 	t.mode.Store(0)
+	number++
+	if config.Config.Number == number {
+		go func() {
+			pauseCh <- struct{}{}
+			time.Sleep(10 * time.Second)
+			logrus.Warn("任务已停止")
+		}()
+	}
 }
 
 func (t *Task) trade(
