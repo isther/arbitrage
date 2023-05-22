@@ -2,7 +2,6 @@ package binancemexc
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -66,9 +65,10 @@ func (a *Account) Start() {
 
 			number++
 			if config.Config.Number == number {
-				logrus.Warn("软件已停止")
-				time.Sleep(3001 * time.Millisecond)
-				os.Exit(-1)
+				go func() {
+					logrus.Warn("任务已停止")
+					pauseCh <- struct{}{}
+				}()
 			}
 		}
 	}()

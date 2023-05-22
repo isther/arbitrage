@@ -1,7 +1,7 @@
 package dingding
 
 import (
-	"sync"
+	"context"
 	"time"
 
 	"github.com/CatchZeng/dingtalk/pkg/dingtalk"
@@ -22,32 +22,25 @@ func NewDingDingBot(accessToken, secrect string, chLen int) *DingDingBot {
 }
 
 func (d *DingDingBot) Start() {
-	var (
-		L   sync.Mutex
-		msg = ""
-	)
-
-	go func() {
-		for {
-			m := <-d.MsgCh
-			L.Lock()
-			msg += m
-			L.Unlock()
-		}
-	}()
-
 	for {
 		func() {
-			L.Lock()
-			defer L.Unlock()
-			if msg != "" {
-				// d.client.Send(dingtalk.NewActionCardMessage().SetIndependentJump("Msg", msg, nil, "", ""))
-				d.client.Send(dingtalk.NewTextMessage().SetContent(msg))
-				msg = ""
-				time.Sleep(3001 * time.Millisecond)
+			var (
+				msg         = ""
+				ctx, cancel = context.WithTimeout(context.Background(), 3000*time.Millisecond)
+			)
+			defer cancel()
+
+			for {
+				select {
+				case m := <-d.MsgCh:
+					msg += m
+				case <-ctx.Done():
+					if msg != "" {
+						d.client.Send(dingtalk.NewTextMessage().SetContent(msg))
+						return
+					}
+				}
 			}
 		}()
-		time.Sleep(10 * time.Millisecond)
 	}
-
 }
