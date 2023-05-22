@@ -42,5 +42,6 @@ func (d *DingDingBot) Start() {
 				}
 			}
 		}()
+		time.Sleep(10 * time.Millisecond)
 	}
 }
