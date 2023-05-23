@@ -157,6 +157,7 @@ func (t *Task) trade(
 			ok, t.closeRatio, t.openStablePrice, t.openBinancePrice, t.openMexcPrice,
 				orderIDs.OpenBinanceID, orderIDs.OpenMexcID = t.open(binanceWsReqCh)
 			if ok {
+				time.Sleep(500 * time.Millisecond)
 				break
 			}
 		}
@@ -516,11 +517,19 @@ func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decim
 	} else {
 		status = "Close"
 	}
+	// return fmt.Sprintf(
+	// 	"Status: %s [Mode%d] TUSD/USDT: %s BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
+	// 	status,
+	// 	t.mode.Load(),
+	// 	stableSymbolPrice,
+	// 	taPrice,
+	// 	tbPrice,
+	// 	ratio.Mul(decimal.NewFromFloat(10000)).String(),
+	// )
 	return fmt.Sprintf(
-		"Status: %s [Mode%d] TUSD/USDT: %s BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
+		"Status: %s [Mode%d] BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
 		status,
 		t.mode.Load(),
-		stableSymbolPrice,
 		taPrice,
 		tbPrice,
 		ratio.Mul(decimal.NewFromFloat(10000)).String(),
