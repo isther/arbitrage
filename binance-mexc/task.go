@@ -105,12 +105,12 @@ func (t *Task) run(
 func (t *Task) Init() {
 	t.mode.Store(0)
 	number++
+	pauseCh <- struct{}{}
 	if config.Config.Number == number {
-		go func() {
-			pauseCh <- struct{}{}
-			time.Sleep(10 * time.Second)
-			logrus.Warn("任务已停止")
-		}()
+		logrus.Warn("任务已停止")
+	} else {
+		time.Sleep(time.Duration(config.Config.WaitDuration) * time.Millisecond)
+		unPauseCh <- struct{}{}
 	}
 }
 

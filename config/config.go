@@ -49,6 +49,7 @@ params:
   klinePauseDuration: 500 # ms
   clientTimeOut: 500 # ms
   clientTimeOutPauseDuration: 500 # ms
+  waitDuration: 5000 # ms
 `
 )
 
@@ -84,6 +85,7 @@ type Params struct {
 	KlinePauseDuration         int64   `json:"klinePauseDuration" yaml:"klinePauseDuration"`                 // ms
 	ClientTimeOut              int64   `json:"clientTimeOut" yaml:"clientTimeOut"`                           // ms
 	ClientTimeOutPauseDuration int64   `json:"clientTimeOutPauseDuration" yaml:"clientTimeOutPauseDuration"` // ms
+	WaitDuration               int64   `json:"waitDuration" yaml:"waitDuration"`                             // ms
 }
 
 type DingDing struct {
