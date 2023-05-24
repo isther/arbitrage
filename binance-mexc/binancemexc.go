@@ -12,8 +12,8 @@ const (
 
 var (
 	Paused         atomic.Bool
-	pauseCh        = make(chan struct{})
-	unPauseCh      = make(chan struct{})
+	pauseCh        = make(chan struct{}, 2)
+	unPauseCh      = make(chan struct{}, 2)
 	klineRatioBase = decimal.NewFromInt(10000)
 	base           = decimal.NewFromInt(10000)
 )

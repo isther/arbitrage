@@ -104,8 +104,8 @@ func (t *Task) run(
 
 func (t *Task) Init() {
 	t.mode.Store(0)
-	number++
 	pauseCh <- struct{}{}
+	number++
 	if config.Config.Number == number {
 		logrus.Warn("任务已停止")
 	} else {
