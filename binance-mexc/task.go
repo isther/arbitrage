@@ -157,7 +157,6 @@ func (t *Task) trade(
 			ok, t.closeRatio, t.openStablePrice, t.openBinancePrice, t.openMexcPrice,
 				orderIDs.OpenBinanceID, orderIDs.OpenMexcID = t.open(binanceWsReqCh)
 			if ok {
-				time.Sleep(500 * time.Millisecond)
 				break
 			}
 		}
@@ -427,16 +426,12 @@ func (t *Task) tradeMode1(
 			mexcPrice,
 			mexcQty)
 		if err != nil {
-			go func() {
-				logrus.Warnf("mexc trade error: %v", err.Error())
-				pauseCh <- struct{}{}
-			}()
+			pauseCh <- struct{}{}
+			logrus.Warnf("mexc trade error: %v", err.Error())
 		}
 		if res.Code != 200 {
-			go func() {
-				logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
-				pauseCh <- struct{}{}
-			}()
+			pauseCh <- struct{}{}
+			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
 		}
 		return res
 	}()
@@ -476,16 +471,12 @@ func (t *Task) tradeMode2(
 			mexcQty,
 		)
 		if err != nil {
-			go func() {
-				logrus.Warnf("mexc trade error: %v", err.Error())
-				pauseCh <- struct{}{}
-			}()
+			pauseCh <- struct{}{}
+			logrus.Warnf("mexc trade error: %v", err.Error())
 		}
 		if res.Code != 200 {
-			go func() {
-				logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
-				pauseCh <- struct{}{}
-			}()
+			pauseCh <- struct{}{}
+			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
 		}
 		return res
 	}()

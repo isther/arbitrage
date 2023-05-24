@@ -139,15 +139,13 @@ func (b *ArbitrageManager) Start() {
 					case binance.ServerTime:
 						if decimal.NewFromInt(time.Now().UnixMilli() - wsApiEvent.ServerTime.ServerTime).
 							GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
-							go func() {
-								if !Paused.Load() {
-									pauseCh <- struct{}{}
-									logrus.Warn("币安超时，已暂停")
-									time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
-									logrus.Warn("币安超时暂停结束")
-									unPauseCh <- struct{}{}
-								}
-							}()
+							if !Paused.Load() {
+								pauseCh <- struct{}{}
+								logrus.Warn("币安超时，已暂停")
+								time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
+								logrus.Warn("币安超时暂停结束")
+								unPauseCh <- struct{}{}
+							}
 						}
 					default:
 						logrus.Debug(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
@@ -189,15 +187,13 @@ func (b *ArbitrageManager) Start() {
 
 					if high.Div(low).Sub(decimal.NewFromInt(1)).Mul(klineRatioBase).
 						GreaterThanOrEqual(decimal.NewFromFloat(config.Config.KlineRatio)) {
-						go func() {
-							if !Paused.Load() {
-								pauseCh <- struct{}{}
-								logrus.Warn("BTC振幅过高，已暂停")
-								time.Sleep(time.Duration(config.Config.KlinePauseDuration) * time.Millisecond)
-								logrus.Warn("BTC振幅过高暂停结束")
-								unPauseCh <- struct{}{}
-							}
-						}()
+						if !Paused.Load() {
+							pauseCh <- struct{}{}
+							logrus.Warn("BTC振幅过高，已暂停")
+							time.Sleep(time.Duration(config.Config.KlinePauseDuration) * time.Millisecond)
+							logrus.Warn("BTC振幅过高暂停结束")
+							unPauseCh <- struct{}{}
+						}
 					}
 				},
 				func(err error) {
@@ -217,15 +213,13 @@ func (b *ArbitrageManager) Start() {
 			serverTime := mexc.ServerTime()
 			if decimal.NewFromInt(time.Now().UnixMilli() - serverTime).
 				GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
-				go func() {
-					if !Paused.Load() {
-						pauseCh <- struct{}{}
-						logrus.Warn("抹茶超时，已暂停")
-						time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
-						logrus.Warn("抹茶超时暂停结束")
-						unPauseCh <- struct{}{}
-					}
-				}()
+				if !Paused.Load() {
+					pauseCh <- struct{}{}
+					logrus.Warn("抹茶超时，已暂停")
+					time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
+					logrus.Warn("抹茶超时暂停结束")
+					unPauseCh <- struct{}{}
+				}
 			}
 			time.Sleep(1 * time.Second)
 		}
