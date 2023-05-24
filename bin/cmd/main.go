@@ -8,6 +8,7 @@ import (
 	binancemexc "github.com/isther/arbitrage/binance-mexc"
 	"github.com/isther/arbitrage/config"
 	"github.com/isther/arbitrage/dingding"
+	"github.com/isther/arbitrage/mexc"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,6 +30,7 @@ func init() {
 	// Keep ws alive
 	binance.WebsocketKeepalive = true
 	binancesdk.WebsocketKeepalive = true
+	mexc.WebsocketKeepalive = true
 
 	// Add dingding bot hook
 	logrus.AddHook(dingding.NewDingDingBotHook(
