@@ -1,9 +1,30 @@
 package mexc
 
+import (
+	"encoding/json"
+
+	"github.com/go-resty/resty/v2"
+)
+
 // WS ListenKey
 //
 // 生成 Listen Key  Create a ListenKey
-func CreateListenKey(jsonParams string) interface{} {
+
+func CreateListenKey() string {
+	var params string = ""
+	resp := createListenKey(params)
+	NewListenKey, ok := resp.(*resty.Response)
+	if !ok {
+		panic("create listenkey failed")
+	}
+	var listenKeyResponse ListenKeyResponse
+	if err := json.Unmarshal(NewListenKey.Body(), &listenKeyResponse); err != nil {
+		panic("create listenkey failed")
+	}
+	return listenKeyResponse.ListenKey
+}
+
+func createListenKey(jsonParams string) interface{} {
 	requestUrl := getHttpEndpoint() + getNewListenKeyApi()
 	// fmt.Println("requestUrl:", requestUrl)
 	response := PrivatePost(requestUrl, jsonParams)

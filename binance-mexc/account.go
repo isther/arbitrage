@@ -73,21 +73,21 @@ func (a *Account) Start() {
 
 	go func() {
 		var (
-			restartCh = make(chan struct{})
-			listenKey = binance.CreateListenKey()
+			restartCh        = make(chan struct{})
+			binanceListenKey = binance.CreateListenKey()
 		)
-		defer binance.CloseListenKey(listenKey)
+		defer binance.CloseListenKey(binanceListenKey)
 
 		go func() {
 			for {
 				time.Sleep(25 * time.Minute)
-				binance.KeepListenKey(listenKey)
+				binance.KeepListenKey(binanceListenKey)
 			}
 		}()
 
 		for {
 			_, _ = binance.StartWsUserData(
-				listenKey,
+				binanceListenKey,
 				func(event *binancesdk.WsUserDataEvent) {
 					switch event.Event {
 					case binancesdk.UserDataEventTypeOutboundAccountPosition:
@@ -115,9 +115,22 @@ func (a *Account) Start() {
 	}()
 
 	go func() {
-		var restartCh = make(chan struct{})
+		var (
+			restartCh     = make(chan struct{})
+			mexcListenKey = mexc.CreateListenKey()
+		)
+		defer mexc.CloseListenKey(mexcListenKey)
+
+		go func() {
+			// 每30分钟发送一个PUT
+			time.Sleep(30 * time.Minute)
+			params := fmt.Sprintf(`{"listenKey": "%s"}`, mexcListenKey)
+			mexc.KeepListenKey(params)
+		}()
+
 		for {
 			_, _ = mexc.StartWsDealsInfoServer(
+				mexcListenKey,
 				func(event *mexc.WsPrivateDealsEvent) {
 					// logrus.WithFields(logrus.Fields{"server": "mexc account"}).Infof("%+v", event)
 					a.L.Lock()

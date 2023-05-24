@@ -73,7 +73,7 @@ func TestWsAccountInfoServe(t *testing.T) {
 func TestWsDealsInfoServe(t *testing.T) {
 	assert := assert.New(t)
 	config.Load("../config.yaml")
-	doneC, stopC, err := WsDealsInfoServe(func(event *WsPrivateDealsEvent) { fmt.Printf("%+v\n", event) }, errHandler)
+	doneC, stopC, err := WsDealsInfoServe(CreateListenKey(), func(event *WsPrivateDealsEvent) { fmt.Printf("%+v\n", event) }, errHandler)
 	assert.Nil(err)
 
 	go func() {

@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -134,17 +133,7 @@ type ListenKeyResponse struct {
 
 // 现货账户信息
 func WsAccountInfoServe(handler WsPrivateAccountHandler, errHandler ErrHandler) (chan struct{}, chan struct{}, error) {
-	var params string = ""
-	resp := CreateListenKey(params)
-	NewListenKey, ok := resp.(*resty.Response)
-	if !ok {
-		return nil, nil, nil
-	}
-	var listenKeyResponse ListenKeyResponse
-	if err := json.Unmarshal(NewListenKey.Body(), &listenKeyResponse); err != nil {
-		return nil, nil, nil
-	}
-	listenkey := listenKeyResponse.ListenKey
+	listenkey := CreateListenKey()
 	if strings.TrimSpace(listenkey) == "" {
 		return nil, nil, errors.New("listenkey is empty")
 	}
@@ -183,7 +172,7 @@ func WsAccountInfoServe(handler WsPrivateAccountHandler, errHandler ErrHandler) 
 
 }
 
-func StartWsDealsInfoServer(handler WsPrivateDealsHandler, errHandler ErrHandler) (
+func StartWsDealsInfoServer(listenkey string, handler WsPrivateDealsHandler, errHandler ErrHandler) (
 	chan struct{},
 	chan struct{},
 ) {
@@ -193,7 +182,7 @@ func StartWsDealsInfoServer(handler WsPrivateDealsHandler, errHandler ErrHandler
 		stopC chan struct{}
 	)
 	for {
-		doneC, stopC, err = WsDealsInfoServe(handler, errHandler)
+		doneC, stopC, err = WsDealsInfoServe(listenkey, handler, errHandler)
 		if err == nil {
 			break
 		}
@@ -204,27 +193,7 @@ func StartWsDealsInfoServer(handler WsPrivateDealsHandler, errHandler ErrHandler
 	return doneC, stopC
 }
 
-// 现货账户成交
-func WsDealsInfoServe(handler WsPrivateDealsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}, error) {
-	var params string = ""
-	resp := CreateListenKey(params)
-	NewListenKey, ok := resp.(*resty.Response)
-	if !ok {
-		return nil, nil, nil
-	}
-	var listenKeyResponse ListenKeyResponse
-	if err := json.Unmarshal(NewListenKey.Body(), &listenKeyResponse); err != nil {
-		return nil, nil, nil
-	}
-	listenkey := listenKeyResponse.ListenKey
-
-	go func() {
-		// 每30秒发送一个PUT
-		time.Sleep(30 * time.Second)
-		params := fmt.Sprintf(`{"listenKey": "%s"}`, listenkey)
-		KeepListenKey(params)
-	}()
-
+func WsDealsInfoServe(listenkey string, handler WsPrivateDealsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}, error) {
 	// 成交信息推送
 	req, err := json.Marshal(WsApiRequest{
 		Method: SUBSCRIPTION,
