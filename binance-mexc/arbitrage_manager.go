@@ -152,6 +152,7 @@ func (b *ArbitrageManager) Start() {
 					}
 				},
 				func(err error) {
+					logrus.Error("BinanceWsApiServiceManager: ", err)
 					restartCh <- struct{}{}
 					// panic(err)
 				},
