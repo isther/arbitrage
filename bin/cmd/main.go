@@ -33,6 +33,8 @@ func init() {
 	mexc.WebsocketKeepalive = true
 
 	// Add dingding bot hook
+	logrus.SetLevel(logrus.DebugLevel)
+
 	logrus.AddHook(dingding.NewDingDingBotHook(
 		config.Config.LogDingDingConfig.AccessToken, config.Config.LogDingDingConfig.Secrect,
 		config.Config.ErrorDingDingConfig.AccessToken, config.Config.ErrorDingDingConfig.Secrect,
