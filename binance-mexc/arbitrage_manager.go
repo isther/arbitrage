@@ -148,7 +148,7 @@ func (b *ArbitrageManager) Start() {
 							}
 						}
 					default:
-						logrus.Debug(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+						logrus.Warn(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
 					}
 				},
 				func(err error) {
