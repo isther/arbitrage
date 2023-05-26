@@ -108,7 +108,7 @@ func keepAlive(c *websocket.Conn, timeout time.Duration) {
 		defer ticker.Stop()
 		for {
 			deadline := time.Now().Add(10 * time.Second)
-			err := c.WriteControl(websocket.PingMessage, []byte{}, deadline)
+			err := c.WriteControl(websocket.PongMessage, []byte{}, deadline)
 			if err != nil {
 				return
 			}
