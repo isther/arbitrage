@@ -77,8 +77,13 @@ type Fill struct {
 }
 
 func NewOrderTrade(wsApiOrderTradeParams WsApiOrderTradeParams) *WsApiRequest {
+	var id = uuid.New().String()
+	if v, ok := wsApiOrderTradeParams[PARAM_NEW_CLIENT_ORDER_ID]; ok {
+		id = v.(string)
+	}
+
 	return &WsApiRequest{
-		ID:     uuid.New().String(),
+		ID:     id,
 		Method: OrderTrade,
 		Params: wsApiOrderTradeParams,
 	}

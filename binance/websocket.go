@@ -44,7 +44,7 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 	}
 
 	//BUG:c.SetReadLimit(655350)
-	msgC = make(chan []byte)
+	msgC = make(chan []byte, 10)
 	doneC = make(chan struct{})
 	stopC = make(chan struct{})
 	go func() {
@@ -76,6 +76,8 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 				message := <-msgC
 
 				c.WriteMessage(websocket.TextMessage, message)
+
+				time.Sleep(10 * time.Millisecond)
 			}
 		}()
 

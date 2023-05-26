@@ -208,6 +208,10 @@ func (t *Task) openMode1(
 	mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
 	binanceSymbolBidPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestBidPrice)
 
+	if stableSymbolBidPrice.IsZero() || mexcSymbolAskPrice.IsZero() || binanceSymbolBidPrice.IsZero() {
+		return false, decimal.Zero, decimal.Zero, decimal.Zero, decimal.Zero, "", ""
+	}
+
 	ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
 	if ratioMode1.GreaterThanOrEqual(t.minRatio) && ratioMode1.LessThanOrEqual(t.maxRatio) {
 		t.mode.Store(1)
@@ -249,6 +253,10 @@ func (t *Task) openMode2(
 	stableSymbolAskPrice, _ := decimal.NewFromString(t.stableCoinSymbolEvent.BestAskPrice)
 	binanceSymbolAskPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestAskPrice)
 	mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+
+	if stableSymbolAskPrice.IsZero() || binanceSymbolAskPrice.IsZero() || mexcSymbolBidPrice.IsZero() {
+		return false, decimal.Zero, decimal.Zero, decimal.Zero, decimal.Zero, "", ""
+	}
 
 	ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
 	if ratioMode2.GreaterThanOrEqual(t.minRatio) && ratioMode2.LessThanOrEqual(t.maxRatio) {

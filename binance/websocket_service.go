@@ -95,7 +95,7 @@ type WebsocketServiceManager struct {
 
 func NewWebsocketServiceManager() *WebsocketServiceManager {
 	return &WebsocketServiceManager{
-		RequestCh: make(chan *WsApiRequest),
+		RequestCh: make(chan *WsApiRequest, 10),
 		events:    make(map[string]WsApiMethod),
 	}
 }
