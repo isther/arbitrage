@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -83,7 +82,6 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 		// Receive messages from binance.
 		for {
 			_, message, err := c.ReadMessage()
-			logrus.Warnf("Receive message from binance: %s", message)
 			if err != nil {
 				if !silent {
 					errHandler(err)
