@@ -129,9 +129,6 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 	go func() {
 		for {
 			wsApiRequest := <-w.RequestCh
-			if wsApiRequest.Method == OrderTrade {
-				logrus.Warn("[RequestCh] Send wsApiRequest: ", wsApiRequest)
-			}
 			msg, err := json.Marshal(wsApiRequest)
 			if err != nil {
 				logrus.Error("Failed to marshal wsApiRequest:", err)
