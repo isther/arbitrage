@@ -438,9 +438,15 @@ func (t *Task) tradeMode1(
 			pauseCh <- struct{}{}
 			logrus.Warnf("mexc trade error: %v", err.Error())
 		}
-		if res.Code != 200 {
+
+		switch res.Code {
+		case 401:
 			pauseCh <- struct{}{}
 			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
+		case 30004:
+			logrus.Warn("抹茶交易异常，无法交易，程序已终止: ", res, err)
+		case 30005:
+			logrus.Warn("抹茶交易异常，无法交易，程序已终止: ", res, err)
 		}
 		return res
 	}()
@@ -483,9 +489,14 @@ func (t *Task) tradeMode2(
 			pauseCh <- struct{}{}
 			logrus.Warnf("mexc trade error: %v", err.Error())
 		}
-		if res.Code != 200 {
+		switch res.Code {
+		case 401:
 			pauseCh <- struct{}{}
 			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
+		case 30004:
+			logrus.Warn("抹茶交易异常，无法交易，程序已终止: ", res, err)
+		case 30005:
+			logrus.Warn("抹茶交易异常，无法交易，程序已终止: ", res, err)
 		}
 		return res
 	}()
