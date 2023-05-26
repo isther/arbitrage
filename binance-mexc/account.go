@@ -216,7 +216,7 @@ func (a *Account) orderUpdate(orderUpdate binancesdk.WsOrderUpdate) {
 func (a *Account) profitLog(orderIds OrderIds) {
 	openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, ok := a.getOrders(orderIds)
 	if !ok {
-		logrus.Error("订单错误")
+		logrus.Warn("订单错误")
 		return
 	}
 
