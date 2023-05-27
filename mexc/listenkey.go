@@ -19,7 +19,7 @@ func CreateListenKey() string {
 	}
 	var listenKeyResponse ListenKeyResponse
 	if err := json.Unmarshal(NewListenKey.Body(), &listenKeyResponse); err != nil {
-		panic("create listenkey failed")
+		panic("marshal listenkey failed")
 	}
 	return listenKeyResponse.ListenKey
 }
