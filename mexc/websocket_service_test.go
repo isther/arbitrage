@@ -17,6 +17,11 @@ var (
 	errHandler = func(err error) { panic(err) }
 )
 
+func TestCreateListenKey(t *testing.T) {
+	config.Load("../config.yaml")
+	t.Log(CreateListenKey())
+}
+
 func TestWsDepthServe(t *testing.T) {
 	assert := assert.New(t)
 	doneC, stopC, err := WsDepthServe("BTCUSDT", wsHandler, errHandler)
