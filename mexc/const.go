@@ -34,6 +34,10 @@ const (
 	TimeInForceTypeGTC TimeInForceType = "GTC"
 	TimeInForceTypeIOC TimeInForceType = "IOC"
 	TimeInForceTypeFOK TimeInForceType = "FOK"
+
+	timestampKey  = "timestamp"
+	signatureKey  = "signature"
+	recvWindowKey = "recvWindow"
 )
 
 func getHttpEndpoint() string {

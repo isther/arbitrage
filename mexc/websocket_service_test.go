@@ -1,6 +1,7 @@
 package mexc
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -19,7 +20,13 @@ var (
 
 func TestCreateListenKey(t *testing.T) {
 	config.Load("../config.yaml")
-	t.Log(CreateListenKey())
+	// t.Log(CreateListenKey())
+
+	key, err := NewClient(config.Config.MexcApiKey, config.Config.MexcSecretKey).NewListenKeyService().Do(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	t.Log(key)
 }
 
 func TestWsDepthServe(t *testing.T) {
