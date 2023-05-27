@@ -208,11 +208,11 @@ func (t *Task) openMode1(
 	mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
 	binanceSymbolBidPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestBidPrice)
 
-	if stableSymbolBidPrice.IsZero() || mexcSymbolAskPrice.IsZero() || binanceSymbolBidPrice.IsZero() {
+	ratioMode1, ok := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
+	if !ok {
 		return false, decimal.Zero, decimal.Zero, decimal.Zero, decimal.Zero, "", ""
 	}
 
-	ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
 	if ratioMode1.GreaterThanOrEqual(t.minRatio) && ratioMode1.LessThanOrEqual(t.maxRatio) {
 		t.mode.Store(1)
 		logrus.Info(t.ratioLog(ratioMode1, stableSymbolBidPrice, binanceSymbolBidPrice, mexcSymbolAskPrice))
@@ -254,11 +254,11 @@ func (t *Task) openMode2(
 	binanceSymbolAskPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestAskPrice)
 	mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 
-	if stableSymbolAskPrice.IsZero() || binanceSymbolAskPrice.IsZero() || mexcSymbolBidPrice.IsZero() {
+	ratioMode2, ok := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
+	if !ok {
 		return false, decimal.Zero, decimal.Zero, decimal.Zero, decimal.Zero, "", ""
 	}
 
-	ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
 	if ratioMode2.GreaterThanOrEqual(t.minRatio) && ratioMode2.LessThanOrEqual(t.maxRatio) {
 		t.mode.Store(2)
 		logrus.Info(t.ratioLog(ratioMode2, stableSymbolAskPrice, binanceSymbolAskPrice, mexcSymbolBidPrice))
@@ -307,8 +307,12 @@ func (t *Task) close(
 				ratio := decimal.NewFromFloat(-0.0001).Sub(t.closeRatio).Add(t.profitRatio)
 				binanceSymbolAskPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestAskPrice)
 				mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+				ratioMode2, ok := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice)
+				if !ok {
+					continue
+				}
 
-				if ratioMode2 := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice); ratioMode2.GreaterThanOrEqual(ratio) {
+				if ratioMode2.GreaterThanOrEqual(ratio) {
 					logrus.Info(t.ratioLog(ratioMode2, t.openStablePrice, binanceSymbolAskPrice, mexcSymbolBidPrice))
 					t.profitLog(binanceSymbolAskPrice, mexcSymbolBidPrice)
 
@@ -328,8 +332,12 @@ func (t *Task) close(
 				ratio := decimal.NewFromFloat(-0.0001).Sub(t.closeRatio).Add(t.profitRatio)
 				mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
 				binanceSymbolBidPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestBidPrice)
+				ratioMode1, ok := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice)
+				if !ok {
+					continue
+				}
 
-				if ratioMode1 := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice); ratioMode1.GreaterThanOrEqual(ratio) {
+				if ratioMode1.GreaterThanOrEqual(ratio) {
 					logrus.Info(t.ratioLog(ratioMode1, t.openStablePrice, binanceSymbolBidPrice, mexcSymbolAskPrice))
 					t.profitLog(binanceSymbolBidPrice, mexcSymbolAskPrice)
 
@@ -360,9 +368,10 @@ func (t *Task) foreceClose(
 		mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 
 		// Log
+		ratio, _ := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice)
 		logrus.Info("[强平]",
 			t.ratioLog(
-				t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice),
+				ratio,
 				t.openStablePrice,
 				binanceSymbolAskPrice,
 				mexcSymbolBidPrice,
@@ -383,9 +392,10 @@ func (t *Task) foreceClose(
 		mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 
 		// Log
+		ratio, _ := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice)
 		logrus.Info("[强平]",
 			t.ratioLog(
-				t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice),
+				ratio,
 				t.openStablePrice,
 				binanceSymbolBidPrice,
 				mexcSymbolAskPrice,
@@ -505,20 +515,28 @@ func (t *Task) tradeMode2(
 	return res.Data
 }
 
-func (t *Task) calculateRatioMode1(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) decimal.Decimal {
+func (t *Task) calculateRatioMode1(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) (decimal.Decimal, bool) {
+	if taPrice.IsZero() || tbPrice.IsZero() || stableSymbolPrice.IsZero() {
+		return decimal.Zero, false
+	}
+
 	return stableSymbolPrice.
 		Sub(
 			tbPrice.Div(taPrice),
-		)
+		), true
 }
 
-func (t *Task) calculateRatioMode2(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) decimal.Decimal {
+func (t *Task) calculateRatioMode2(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) (decimal.Decimal, bool) {
+	if taPrice.IsZero() || tbPrice.IsZero() || stableSymbolPrice.IsZero() {
+		return decimal.Zero, false
+	}
+
 	return decimal.NewFromFloat32(1).Div(stableSymbolPrice).
 		Sub(
 			taPrice.Div(
 				tbPrice,
 			),
-		)
+		), true
 }
 
 func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decimal) string {
