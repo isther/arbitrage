@@ -118,15 +118,19 @@ func (a *Account) Start() {
 	go func() {
 		var (
 			restartCh     = make(chan struct{})
-			mexcListenKey = mexc.CreateListenKey()
+			mexcListenKey string
+			err           error
 		)
-		defer mexc.CloseListenKey(mexcListenKey)
+
+		for err == nil {
+			mexcListenKey, err = newMexcClient().NewStartUserStreamService().Do(context.Background())
+		}
+		defer newMexcClient().NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 
 		go func() {
 			// 每30分钟发送一个PUT
 			time.Sleep(30 * time.Minute)
-			params := fmt.Sprintf(`{"listenKey": "%s"}`, mexcListenKey)
-			mexc.KeepListenKey(params)
+			defer newMexcClient().NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 		}()
 
 		for {

@@ -22,7 +22,7 @@ func TestCreateListenKey(t *testing.T) {
 	config.Load("../config.yaml")
 	// t.Log(CreateListenKey())
 
-	key, err := NewClient(config.Config.MexcApiKey, config.Config.MexcSecretKey).NewListenKeyService().Do(context.Background())
+	key, err := NewClient(config.Config.MexcApiKey, config.Config.MexcSecretKey).NewStartUserStreamService().Do(context.Background())
 	if err != nil {
 		panic(err)
 	}
@@ -58,34 +58,6 @@ func TestWsPartialDepthServe(t *testing.T) {
 func TestWsBookTickerServe(t *testing.T) {
 	assert := assert.New(t)
 	doneC, stopC, err := WsBookTickerServe("BTCUSDT", func(event *WsBookTickerEvent) { fmt.Printf("%+v\n", event) }, errHandler)
-	assert.Nil(err)
-
-	go func() {
-		time.Sleep(10 * time.Second)
-		stopC <- struct{}{}
-	}()
-
-	<-doneC
-}
-
-func TestWsAccountInfoServe(t *testing.T) {
-	assert := assert.New(t)
-	config.Load("../config.yaml")
-	doneC, stopC, err := WsAccountInfoServe(func(event *WsPrivateAccountEvent) { fmt.Printf("%+v\n", event) }, errHandler)
-	assert.Nil(err)
-
-	go func() {
-		time.Sleep(10 * time.Second)
-		stopC <- struct{}{}
-	}()
-
-	<-doneC
-}
-
-func TestWsDealsInfoServe(t *testing.T) {
-	assert := assert.New(t)
-	config.Load("../config.yaml")
-	doneC, stopC, err := WsDealsInfoServe(CreateListenKey(), func(event *WsPrivateDealsEvent) { fmt.Printf("%+v\n", event) }, errHandler)
 	assert.Nil(err)
 
 	go func() {

@@ -40,7 +40,6 @@ type doFunc func(req *http.Request) (*http.Response, error)
 
 func NewClient(apiKey, secretKey string) *Client {
 	return &Client{
-		Debug:      true,
 		APIKey:     apiKey,
 		SecretKey:  secretKey,
 		BaseURL:    getHttpEndpoint(),
@@ -172,6 +171,21 @@ func newJSON(data []byte) (j *simplejson.Json, err error) {
 	return j, nil
 }
 
-func (c *Client) NewListenKeyService() *StartUserStreamService {
+func (c *Client) NewServerTimeService() *ServerTimeService {
+	return &ServerTimeService{c: c}
+}
+
+// NewStartUserStreamService init starting user stream service
+func (c *Client) NewStartUserStreamService() *StartUserStreamService {
 	return &StartUserStreamService{c: c}
+}
+
+// NewKeepaliveUserStreamService init keep alive user stream service
+func (c *Client) NewKeepaliveUserStreamService() *KeepaliveUserStreamService {
+	return &KeepaliveUserStreamService{c: c}
+}
+
+// NewCloseUserStreamService init closing user stream service
+func (c *Client) NewCloseUserStreamService() *CloseUserStreamService {
+	return &CloseUserStreamService{c: c}
 }

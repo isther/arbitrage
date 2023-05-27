@@ -2,10 +2,8 @@ package mexc
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -132,45 +130,46 @@ type ListenKeyResponse struct {
 }
 
 // 现货账户信息
-func WsAccountInfoServe(handler WsPrivateAccountHandler, errHandler ErrHandler) (chan struct{}, chan struct{}, error) {
-	listenkey := CreateListenKey()
-	if strings.TrimSpace(listenkey) == "" {
-		return nil, nil, errors.New("listenkey is empty")
-	}
-
-	go func() {
-		// 每30秒发送一个PUT
-		time.Sleep(30 * time.Second)
-		params := fmt.Sprintf(`{"listenKey": "%s"}`, listenkey)
-		KeepListenKey(params)
-	}()
-
-	// 账户信息推送
-	req, err := json.Marshal(WsApiRequest{
-		Method: SUBSCRIPTION,
-		Params: []string{
-			fmt.Sprintf("spot@private.account.v3.api"),
-		},
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Set up the connection
-	cfg := newWsConfig(req, getWsEndpoint()+"?listenKey="+listenkey)
-
-	wsHandler := func(msg []byte) {
-		event := WsPrivateAccountEvent{}
-		err := json.Unmarshal(msg, &event)
-		if err != nil {
-			panic(err)
-		}
-		handler(&event)
-	}
-
-	return wsServe(cfg, wsHandler, errHandler)
-
-}
+//
+//	func WsAccountInfoServe(handler WsPrivateAccountHandler, errHandler ErrHandler) (chan struct{}, chan struct{}, error) {
+//		listenkey := CreateListenKey()
+//		if strings.TrimSpace(listenkey) == "" {
+//			return nil, nil, errors.New("listenkey is empty")
+//		}
+//
+//		go func() {
+//			// 每30秒发送一个PUT
+//			time.Sleep(30 * time.Second)
+//			params := fmt.Sprintf(`{"listenKey": "%s"}`, listenkey)
+//			KeepListenKey(params)
+//		}()
+//
+//		// 账户信息推送
+//		req, err := json.Marshal(WsApiRequest{
+//			Method: SUBSCRIPTION,
+//			Params: []string{
+//				fmt.Sprintf("spot@private.account.v3.api"),
+//			},
+//		})
+//		if err != nil {
+//			return nil, nil, err
+//		}
+//
+//		// Set up the connection
+//		cfg := newWsConfig(req, getWsEndpoint()+"?listenKey="+listenkey)
+//
+//		wsHandler := func(msg []byte) {
+//			event := WsPrivateAccountEvent{}
+//			err := json.Unmarshal(msg, &event)
+//			if err != nil {
+//				panic(err)
+//			}
+//			handler(&event)
+//		}
+//
+//		return wsServe(cfg, wsHandler, errHandler)
+//
+// }
 
 func StartWsDealsInfoServer(listenkey string, handler WsPrivateDealsHandler, errHandler ErrHandler) (
 	chan struct{},

@@ -1,23 +1,28 @@
 package mexc
 
 import (
-	"encoding/json"
-
-	"github.com/go-resty/resty/v2"
+	"context"
+	"net/http"
 )
 
-func ServerTime() int64 {
-	var m = make(map[string]int64)
+type ServerTimeService struct {
+	c *Client
+}
 
-	resp := PublicGet(getHttpEndpoint()+getServerTimeApi(), "")
-
-	servertime, ok := resp.(*resty.Response)
-	if !ok {
-		return 0
+func (s *ServerTimeService) Do(ctx context.Context, opts ...RequestOption) (servertime int64, err error) {
+	r := &request{
+		method:   http.MethodGet,
+		endpoint: getServerTimeApi(),
+		secType:  secTypeSigned,
 	}
-	if err := json.Unmarshal(servertime.Body(), &m); err != nil {
-		return 0
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return 0, err
 	}
-
-	return m["serverTime"]
+	j, err := newJSON(data)
+	if err != nil {
+		return 0, err
+	}
+	servertime = j.Get("servertime").MustInt64()
+	return servertime, nil
 }

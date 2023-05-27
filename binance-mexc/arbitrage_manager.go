@@ -1,6 +1,7 @@
 package binancemexc
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -211,7 +212,11 @@ func (b *ArbitrageManager) Start() {
 
 	go func() {
 		for {
-			serverTime := mexc.ServerTime()
+			serverTime, err := newMexcClient().NewServerTimeService().Do(context.Background())
+			if err != nil {
+				logrus.Error("Failed to get server time:", err)
+				continue
+			}
 			if decimal.NewFromInt(time.Now().UnixMilli() - serverTime).
 				GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
 				if !Paused.Load() {

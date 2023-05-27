@@ -2,7 +2,6 @@ package mexc
 
 const (
 	baseHttpURL   = "https://api.mexc.com"
-	listenKeyApi  = "/api/v3/userDataStream"
 	serverTimeApi = "/api/v3/time"
 )
 
@@ -42,9 +41,6 @@ const (
 
 func getHttpEndpoint() string {
 	return baseHttpURL
-}
-func getNewListenKeyApi() string {
-	return listenKeyApi
 }
 
 func getServerTimeApi() string {
