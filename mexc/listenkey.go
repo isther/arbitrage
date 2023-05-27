@@ -2,6 +2,7 @@ package mexc
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -13,13 +14,13 @@ import (
 func CreateListenKey() string {
 	var params string = ""
 	resp := createListenKey(params)
-	NewListenKey, ok := resp.(*resty.Response)
+	newListenKey, ok := resp.(*resty.Response)
 	if !ok {
 		panic("create listenkey failed")
 	}
 	var listenKeyResponse ListenKeyResponse
-	if err := json.Unmarshal(NewListenKey.Body(), &listenKeyResponse); err != nil {
-		panic("marshal listenkey failed")
+	if err := json.Unmarshal(newListenKey.Body(), &listenKeyResponse); err != nil {
+		panic(fmt.Sprintf("marshal listenkey failed: %+v", newListenKey))
 	}
 	return listenKeyResponse.ListenKey
 }
