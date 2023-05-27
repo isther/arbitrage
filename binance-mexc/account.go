@@ -1,6 +1,7 @@
 package binancemexc
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -246,44 +247,80 @@ func (a *Account) profitLog(orderIds OrderIds) {
 	logrus.Infof(msg)
 }
 
-func (a *Account) getOrders(orderIds OrderIds) (Order, Order, Order, Order, bool) {
+func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder Order, ok bool) {
 	var (
-		cnt = 0
-		f   = func() {
-			time.Sleep(100 * time.Millisecond)
-			cnt++
-		}
+		wg          sync.WaitGroup
+		ticker      = time.NewTicker(time.Millisecond * 10)
+		ctx, cancel = context.WithTimeout(context.Background(), time.Millisecond*1000)
+		cnt         atomic.Int64
 	)
+	defer cancel()
 
-	for cnt < 100 {
-		openBinanceOrder, ok := a.getBinanceOrder(orderIds.OpenBinanceID)
-		if !ok {
-			f()
-			continue
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		if openBinanceOrder, ok = a.getBinanceOrderWithContext(orderIds.OpenBinanceID, ticker, ctx); ok {
+			cnt.Add(1)
 		}
+	}()
 
-		openMexcOrder, ok := a.getMexcOrder(orderIds.OpenMexcID)
-		if !ok {
-			f()
-			continue
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		if openMexcOrder, ok = a.getMexcOrderWithContext(orderIds.OpenMexcID, ticker, ctx); ok {
+			cnt.Add(1)
 		}
+	}()
 
-		closeBinanceOrder, ok := a.getBinanceOrder(orderIds.CloseBinanceID)
-		if !ok {
-			f()
-			continue
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		if closeBinanceOrder, ok = a.getBinanceOrderWithContext(orderIds.CloseBinanceID, ticker, ctx); ok {
+			cnt.Add(1)
 		}
+	}()
 
-		closeMexcOrder, ok := a.getMexcOrder(orderIds.CloseMexcID)
-		if !ok {
-			f()
-			continue
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		if closeMexcOrder, ok = a.getMexcOrderWithContext(orderIds.CloseMexcID, ticker, ctx); ok {
+			cnt.Add(1)
 		}
+	}()
 
+	wg.Wait()
+
+	if cnt.Load() != 4 {
+		return openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, false
+	} else {
 		return openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, true
-
 	}
-	return Order{}, Order{}, Order{}, Order{}, false
+
+}
+
+func (a *Account) getBinanceOrderWithContext(id string, ticker *time.Ticker, ctx context.Context) (Order, bool) {
+	for {
+		select {
+		case <-ctx.Done():
+			return Order{}, false
+		case <-ticker.C:
+			if order, ok := a.getBinanceOrder(id); ok {
+				return order, ok
+			}
+		}
+	}
+}
+func (a *Account) getMexcOrderWithContext(id string, ticker *time.Ticker, ctx context.Context) (Order, bool) {
+	for {
+		select {
+		case <-ctx.Done():
+			return Order{}, false
+		case <-ticker.C:
+			if order, ok := a.getMexcOrder(id); ok {
+				return order, ok
+			}
+		}
+	}
 }
 
 func (a *Account) getBinanceOrder(id string) (Order, bool) {

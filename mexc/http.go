@@ -6,13 +6,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/isther/arbitrage/config"
+	"github.com/sirupsen/logrus"
 )
 
 // 格式化参数字符串
@@ -66,7 +66,7 @@ func PublicGet(urlStr string, jsonParams string) interface{} {
 	resp, err := client.R().Get(path)
 
 	if err != nil {
-		log.Fatal("请求报错：", err)
+		logrus.Error("请求报错：", err)
 	}
 
 	// fmt.Println("Response Info:", resp)
@@ -98,7 +98,7 @@ func PrivateGet(urlStr string, jsonParams string) interface{} {
 	}).Get(path)
 
 	if err != nil {
-		log.Fatal("请求报错：", err)
+		logrus.Error("请求报错：", err)
 	}
 
 	// fmt.Println("Response Info:", resp)
@@ -129,7 +129,7 @@ func PrivatePost(urlStr string, jsonParams string) interface{} {
 	}).Post(path)
 
 	if err != nil {
-		log.Fatal("请求报错：", err)
+		logrus.Error("请求报错：", err)
 	}
 
 	// fmt.Println("Response Info:", resp)
@@ -159,7 +159,7 @@ func PrivateDelete(urlStr string, jsonParams string) interface{} {
 	}).Delete(path)
 
 	if err != nil {
-		log.Fatal("请求报错：", err)
+		logrus.Error("请求报错：", err)
 	}
 
 	// fmt.Println("Response Info:", resp)
@@ -189,7 +189,7 @@ func PrivatePut(urlStr string, jsonParams string) interface{} {
 	}).Put(path)
 
 	if err != nil {
-		log.Fatal("请求报错：", err)
+		logrus.Error("请求报错：", err)
 	}
 
 	// fmt.Println("Response Info:", resp)

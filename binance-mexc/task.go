@@ -454,9 +454,9 @@ func (t *Task) tradeMode1(
 			pauseCh <- struct{}{}
 			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
 		case 30004:
-			logrus.Warn("抹茶交易异常，无法交易，程序已终止: ", res, err)
+			logrus.Warn("抹茶交易异常，无法交易: ", res, err)
 		case 30005:
-			logrus.Warn("抹茶交易异常，无法交易，程序已终止: ", res, err)
+			logrus.Warn("抹茶交易异常，无法交易: ", res, err)
 		}
 		return res
 	}()
@@ -504,9 +504,9 @@ func (t *Task) tradeMode2(
 			pauseCh <- struct{}{}
 			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
 		case 30004:
-			logrus.Warn("抹茶交易异常，无法交易，程序已终止: ", res, err)
+			logrus.Warn("抹茶交易异常，无法交易: ", res, err)
 		case 30005:
-			logrus.Warn("抹茶交易异常，无法交易，程序已终止: ", res, err)
+			logrus.Warn("抹茶交易异常，无法交易: ", res, err)
 		}
 		return res
 	}()
