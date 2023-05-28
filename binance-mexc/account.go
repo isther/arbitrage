@@ -150,7 +150,6 @@ func (a *Account) Start() {
 					if strings.TrimSpace(event.Price) == "" {
 						return
 					}
-					logrus.Infof("%+v", event)
 
 					a.MexcOrders[event.DealsData.OrderId] = Order{
 						Price: stringToDecimal(event.Price),
