@@ -1,12 +1,10 @@
 package mexc
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/isther/arbitrage/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,17 +15,6 @@ var (
 
 	errHandler = func(err error) { panic(err) }
 )
-
-func TestCreateListenKey(t *testing.T) {
-	config.Load("../config.yaml")
-	// t.Log(CreateListenKey())
-
-	key, err := NewClient(config.Config.MexcApiKey, config.Config.MexcSecretKey).NewStartUserStreamService().Do(context.Background())
-	if err != nil {
-		panic(err)
-	}
-	t.Log(key)
-}
 
 func TestWsDepthServe(t *testing.T) {
 	assert := assert.New(t)

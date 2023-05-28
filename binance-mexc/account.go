@@ -128,8 +128,8 @@ func (a *Account) Start() {
 		defer newMexcClient().NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 
 		go func() {
-			// 每30分钟发送一个PUT
-			time.Sleep(30 * time.Minute)
+			// 每25秒发送一个PUT
+			time.Sleep(25 * time.Second)
 			defer newMexcClient().NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 		}()
 

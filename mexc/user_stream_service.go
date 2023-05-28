@@ -43,7 +43,7 @@ func (s *KeepaliveUserStreamService) Do(ctx context.Context, opts ...RequestOpti
 	r := &request{
 		method:   http.MethodPut,
 		endpoint: "/api/v3/userDataStream",
-		secType:  secTypeAPIKey,
+		secType:  secTypeSigned,
 	}
 	r.setFormParam("listenKey", s.listenKey)
 	_, err = s.c.callAPI(ctx, r, opts...)
@@ -67,7 +67,7 @@ func (s *CloseUserStreamService) Do(ctx context.Context, opts ...RequestOption) 
 	r := &request{
 		method:   http.MethodDelete,
 		endpoint: "/api/v3/userDataStream",
-		secType:  secTypeAPIKey,
+		secType:  secTypeSigned,
 	}
 	r.setFormParam("listenKey", s.listenKey)
 	_, err = s.c.callAPI(ctx, r, opts...)
