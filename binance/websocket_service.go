@@ -134,7 +134,10 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 				if err != nil {
 					logrus.Error("Failed to marshal wsApiRequest:", err)
 				}
-				logrus.Info(wsApiRequest)
+
+				if wsApiRequest.Method == OrderTrade {
+					logrus.Info(wsApiRequest)
+				}
 
 				msgC <- msg
 				w.events[wsApiRequest.ID] = wsApiRequest.Method
