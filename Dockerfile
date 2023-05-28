@@ -9,6 +9,8 @@ WORKDIR /build
 
 COPY . .
 
+RUN go mod tidy
+
 RUN go build -o cmd bin/cmd/main.go
 
 FROM scratch as runner
