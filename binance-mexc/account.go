@@ -122,8 +122,11 @@ func (a *Account) Start() {
 			err           error
 		)
 
-		for err == nil {
+		for {
 			mexcListenKey, err = newMexcClient().NewStartUserStreamService().Do(context.Background())
+			if err == nil {
+				break
+			}
 		}
 		defer newMexcClient().NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 
