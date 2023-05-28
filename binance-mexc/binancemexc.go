@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	qty = "0.0004"
+	qty = "0.000379"
 )
 
 var (
 	Paused         atomic.Bool
-	pauseCh        = make(chan struct{}, 2)
-	unPauseCh      = make(chan struct{}, 2)
+	pauseCh        = make(chan struct{})
+	unPauseCh      = make(chan struct{})
 	klineRatioBase = decimal.NewFromInt(10000)
 	base           = decimal.NewFromInt(10000)
 )

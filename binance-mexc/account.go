@@ -139,8 +139,6 @@ func (a *Account) Start() {
 			client.NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 		}()
 
-		logrus.Info("mexc listen key: ", mexcListenKey)
-
 		for {
 			_, _ = mexc.StartWsDealsInfoServer(
 				mexcListenKey,
