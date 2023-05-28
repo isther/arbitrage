@@ -13,7 +13,7 @@ func (s *ServerTimeService) Do(ctx context.Context, opts ...RequestOption) (serv
 	r := &request{
 		method:   http.MethodGet,
 		endpoint: getServerTimeApi(),
-		secType:  secTypeSigned,
+		secType:  secTypeNone,
 	}
 	data, err := s.c.callAPI(ctx, r, opts...)
 	if err != nil {
@@ -23,6 +23,6 @@ func (s *ServerTimeService) Do(ctx context.Context, opts ...RequestOption) (serv
 	if err != nil {
 		return 0, err
 	}
-	servertime = j.Get("servertime").MustInt64()
+	servertime = j.Get("serverTime").MustInt64()
 	return servertime, nil
 }
