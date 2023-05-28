@@ -124,7 +124,9 @@ func (a *Account) Start() {
 
 		for {
 			mexcListenKey, err = newMexcClient().NewStartUserStreamService().Do(context.Background())
-			if err == nil {
+			if err != nil {
+				logrus.Warn("get mexc listen key error: ", err)
+			} else {
 				break
 			}
 		}
