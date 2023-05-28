@@ -316,7 +316,6 @@ func (a *Account) getBinanceOrderWithContext(id string, ticker *time.Ticker, ctx
 		case <-ctx.Done():
 			return Order{}, false
 		case <-ticker.C:
-			logrus.Infof("binance order id: %s", id)
 			if order, ok := a.getBinanceOrder(id); ok {
 				return order, ok
 			}
