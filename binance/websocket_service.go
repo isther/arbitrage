@@ -128,16 +128,18 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 
 	go func() {
 		for {
-			wsApiRequest := <-w.RequestCh
-			msg, err := json.Marshal(wsApiRequest)
-			if err != nil {
-				logrus.Error("Failed to marshal wsApiRequest:", err)
-			}
-			// log.Println(string(msg))
+			select {
+			case wsApiRequest := <-w.RequestCh:
+				msg, err := json.Marshal(wsApiRequest)
+				if err != nil {
+					logrus.Error("Failed to marshal wsApiRequest:", err)
+				}
+				logrus.Info(wsApiRequest)
 
-			msgC <- msg
-			w.events[wsApiRequest.ID] = wsApiRequest.Method
-			// log.Println("Send wsApiRequest successfully: ", wsApiRequest)
+				msgC <- msg
+				w.events[wsApiRequest.ID] = wsApiRequest.Method
+				// log.Println("Send wsApiRequest successfully: ", wsApiRequest)
+			}
 		}
 	}()
 
