@@ -128,10 +128,12 @@ func (a *Account) Start() {
 		defer newMexcClient().NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 
 		go func() {
-			// 每25秒发送一个PUT
-			time.Sleep(25 * time.Second)
-			defer newMexcClient().NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
+			// 每30分钟发送一个Keep
+			time.Sleep(30 * time.Minute)
+			newMexcClient().NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 		}()
+
+		logrus.Info("mexc listen key: ", mexcListenKey)
 
 		for {
 			_, _ = mexc.StartWsDealsInfoServer(
