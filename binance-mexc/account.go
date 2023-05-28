@@ -260,9 +260,10 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 	)
 	defer cancel()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
+
 		if openBinanceOrder, ok = a.getBinanceOrderWithContext(orderIds.OpenBinanceID, ticker, ctx); ok {
 			cnt.Add(1)
 		} else {
@@ -270,9 +271,10 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
+
 		if openMexcOrder, ok = a.getMexcOrderWithContext(orderIds.OpenMexcID, ticker, ctx); ok {
 			cnt.Add(1)
 		} else {
@@ -280,9 +282,10 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
+
 		if closeBinanceOrder, ok = a.getBinanceOrderWithContext(orderIds.CloseBinanceID, ticker, ctx); ok {
 			cnt.Add(1)
 		} else {
@@ -290,9 +293,10 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
+
 		if closeMexcOrder, ok = a.getMexcOrderWithContext(orderIds.CloseMexcID, ticker, ctx); ok {
 			cnt.Add(1)
 		} else {
