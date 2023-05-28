@@ -265,6 +265,8 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 		defer wg.Done()
 		if openBinanceOrder, ok = a.getBinanceOrderWithContext(orderIds.OpenBinanceID, ticker, ctx); ok {
 			cnt.Add(1)
+		} else {
+			logrus.Warn("获取binance开仓订单失败")
 		}
 	}()
 
@@ -273,6 +275,8 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 		defer wg.Done()
 		if openMexcOrder, ok = a.getMexcOrderWithContext(orderIds.OpenMexcID, ticker, ctx); ok {
 			cnt.Add(1)
+		} else {
+			logrus.Warn("获取mexc开仓订单失败")
 		}
 	}()
 
@@ -281,6 +285,8 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 		defer wg.Done()
 		if closeBinanceOrder, ok = a.getBinanceOrderWithContext(orderIds.CloseBinanceID, ticker, ctx); ok {
 			cnt.Add(1)
+		} else {
+			logrus.Warn("获取binance平仓订单失败")
 		}
 	}()
 
@@ -289,6 +295,8 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 		defer wg.Done()
 		if closeMexcOrder, ok = a.getMexcOrderWithContext(orderIds.CloseMexcID, ticker, ctx); ok {
 			cnt.Add(1)
+		} else {
+			logrus.Warn("获取mexc平仓订单失败")
 		}
 	}()
 
