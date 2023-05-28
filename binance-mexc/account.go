@@ -255,7 +255,7 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 	var (
 		wg          sync.WaitGroup
 		ticker      = time.NewTicker(time.Millisecond * 10)
-		ctx, cancel = context.WithTimeout(context.Background(), time.Millisecond*1000)
+		ctx, cancel = context.WithTimeout(context.Background(), time.Millisecond*10000)
 		cnt         atomic.Int64
 	)
 	defer cancel()
@@ -316,6 +316,7 @@ func (a *Account) getBinanceOrderWithContext(id string, ticker *time.Ticker, ctx
 		case <-ctx.Done():
 			return Order{}, false
 		case <-ticker.C:
+			logrus.Infof("binance order id: %s", id)
 			if order, ok := a.getBinanceOrder(id); ok {
 				return order, ok
 			}
@@ -328,6 +329,7 @@ func (a *Account) getMexcOrderWithContext(id string, ticker *time.Ticker, ctx co
 		case <-ctx.Done():
 			return Order{}, false
 		case <-ticker.C:
+			logrus.Infof("mexc order id: %s", id)
 			if order, ok := a.getMexcOrder(id); ok {
 				return order, ok
 			}
