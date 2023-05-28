@@ -120,22 +120,23 @@ func (a *Account) Start() {
 			restartCh     = make(chan struct{})
 			mexcListenKey string
 			err           error
+			client        = newMexcClient()
 		)
 
 		for {
-			mexcListenKey, err = newMexcClient().NewStartUserStreamService().Do(context.Background())
+			mexcListenKey, err = client.NewStartUserStreamService().Do(context.Background())
 			if err != nil {
 				logrus.Warn("get mexc listen key error: ", err)
 			} else {
 				break
 			}
 		}
-		defer newMexcClient().NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
+		defer client.NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 
 		go func() {
 			// 每30分钟发送一个Keep
 			time.Sleep(30 * time.Minute)
-			newMexcClient().NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
+			client.NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 		}()
 
 		logrus.Info("mexc listen key: ", mexcListenKey)

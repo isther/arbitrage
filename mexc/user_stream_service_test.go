@@ -2,6 +2,7 @@ package mexc
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/isther/arbitrage/config"
@@ -16,7 +17,7 @@ func TestListenKey(t *testing.T) {
 	listenKey, err := client.NewStartUserStreamService().Do(context.Background())
 	assert.Nil(err)
 
-	t.Log(listenKey)
+	fmt.Println(listenKey)
 
 	err = client.NewKeepaliveUserStreamService().ListenKey(listenKey).Do(context.Background())
 	assert.Nil(err)
