@@ -47,6 +47,16 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 	msgC = make(chan []byte, 10)
 	doneC = make(chan struct{})
 	stopC = make(chan struct{})
+
+	// Send messages to binance.
+	go func() {
+		for {
+			message := <-msgC
+			c.WriteMessage(websocket.TextMessage, message)
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
+
 	go func() {
 		// This function will exit either on error from
 		// websocket.Conn.ReadMessage or when the stopC channel is
@@ -68,15 +78,6 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 			case <-doneC:
 			}
 			c.Close()
-		}()
-
-		// Send messages to binance.
-		go func() {
-			for {
-				message := <-msgC
-				c.WriteMessage(websocket.TextMessage, message)
-				time.Sleep(10 * time.Millisecond)
-			}
 		}()
 
 		// Receive messages from binance.
