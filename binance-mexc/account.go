@@ -144,6 +144,7 @@ func (a *Account) Start() {
 					if strings.TrimSpace(event.Price) == "" {
 						return
 					}
+					logrus.Infof("%+v", event)
 
 					a.MexcOrders[event.DealsData.OrderId] = Order{
 						Price: stringToDecimal(event.Price),
@@ -332,7 +333,6 @@ func (a *Account) getMexcOrderWithContext(id string, ticker *time.Ticker, ctx co
 		case <-ctx.Done():
 			return Order{}, false
 		case <-ticker.C:
-			logrus.Infof("mexc order id: %s", id)
 			if order, ok := a.getMexcOrder(id); ok {
 				return order, ok
 			}
