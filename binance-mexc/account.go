@@ -134,8 +134,7 @@ func (a *Account) Start() {
 		defer client.NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 
 		go func() {
-			// 每30分钟发送一个Keep
-			time.Sleep(25 * time.Second)
+			time.Sleep(25 * time.Minute)
 			client.NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 		}()
 

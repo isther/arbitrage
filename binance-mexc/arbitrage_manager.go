@@ -58,8 +58,8 @@ func (b *ArbitrageManager) Start() {
 
 	started.Store(false)
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		restartCh := make(chan struct{})
 		for {
 			doneC, _ := b.startBinanceBookTickerWebsocket(
@@ -91,8 +91,8 @@ func (b *ArbitrageManager) Start() {
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		restartCh := make(chan struct{})
 		for {
 			doneC, _ := b.startMexcBookTickerWebsocket(
@@ -119,8 +119,8 @@ func (b *ArbitrageManager) Start() {
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		restartCh := make(chan struct{})
 		for {
 			_, _ = b.websocketApiServiceManager.StartWsApi(
