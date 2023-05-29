@@ -52,7 +52,8 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 	go func() {
 		for {
 			message := <-msgC
-			c.WriteMessage(websocket.TextMessage, message)
+			// c.WriteMessage(websocket.TextMessage, message)
+			c.WriteJSON(string(message))
 			time.Sleep(10 * time.Millisecond)
 		}
 	}()
