@@ -335,6 +335,7 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 	}()
 
 	wg.Wait()
+	a.clearOrders()
 
 	if cnt.Load() != 4 {
 		return openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, false
@@ -342,6 +343,13 @@ func (a *Account) getOrders(orderIds OrderIds) (openBinanceOrder, openMexcOrder,
 		return openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, true
 	}
 
+}
+
+func (a *Account) clearOrders() {
+	a.L.Lock()
+	defer a.L.Unlock()
+	a.binanceOrders = make(map[string]Order)
+	a.mexcOrders = make(map[string]Order)
 }
 
 func (a *Account) getBinanceOrderWithContext(id string, ticker *time.Ticker, ctx context.Context) (Order, bool) {
