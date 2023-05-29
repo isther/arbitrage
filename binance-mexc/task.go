@@ -104,11 +104,12 @@ func (t *Task) run(
 
 func (t *Task) Init() {
 	t.mode.Store(0)
-	pauseCh <- struct{}{}
 	number++
 	if config.Config.Number == number {
-		logrus.Warn("任务已停止")
+		truelyPause()
+		logrus.Warnf("已完成任务%d次，停止。", number)
 	} else {
+		pauseCh <- struct{}{}
 		time.Sleep(time.Duration(config.Config.WaitDuration) * time.Millisecond)
 		unPauseCh <- struct{}{}
 	}
@@ -445,13 +446,13 @@ func (t *Task) tradeMode1(
 			mexcPrice,
 			mexcQty)
 		if err != nil {
-			pauseCh <- struct{}{}
-			logrus.Warnf("mexc trade error: %v", err.Error())
+			truelyPause()
+			logrus.Warnf("mexc trade error: %v，程序已终止", err.Error())
 		}
 
 		switch res.Code {
 		case 401:
-			pauseCh <- struct{}{}
+			truelyPause()
 			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
 		case 30004:
 			logrus.Warn("抹茶交易异常，无法交易: ", res, err)
@@ -496,12 +497,12 @@ func (t *Task) tradeMode2(
 			mexcQty,
 		)
 		if err != nil {
-			pauseCh <- struct{}{}
-			logrus.Warnf("mexc trade error: %v", err.Error())
+			truelyPause()
+			logrus.Warnf("mexc trade error: %v，程序已终止", err.Error())
 		}
 		switch res.Code {
 		case 401:
-			pauseCh <- struct{}{}
+			truelyPause()
 			logrus.Warn("抹茶cookie异常，无法交易，程序已终止: ", res)
 		case 30004:
 			logrus.Warn("抹茶交易异常，无法交易: ", res, err)

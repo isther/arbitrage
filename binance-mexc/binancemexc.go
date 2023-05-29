@@ -2,6 +2,7 @@ package binancemexc
 
 import (
 	"sync/atomic"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
@@ -20,16 +21,28 @@ var (
 
 func init() {
 	Paused.Store(false)
-	go Pause()
+	go RunPause()
 }
 
-func Pause() {
+func RunPause() {
 	for {
 		select {
 		case <-pauseCh:
 			Paused.Store(true)
 		case <-unPauseCh:
 			Paused.Store(false)
+		}
+	}
+}
+
+func truelyPause() {
+	for {
+		switch Paused.Load() {
+		case true:
+			time.Sleep(10 * time.Millisecond)
+		case false:
+			pauseCh <- struct{}{}
+			return
 		}
 	}
 }
