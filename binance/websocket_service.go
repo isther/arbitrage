@@ -95,7 +95,7 @@ type WebsocketServiceManager struct {
 
 func NewWebsocketServiceManager() *WebsocketServiceManager {
 	return &WebsocketServiceManager{
-		RequestCh: make(chan *WsApiRequest, 10),
+		RequestCh: make(chan *WsApiRequest, 100),
 		events:    make(map[string]WsApiMethod),
 	}
 }
@@ -136,7 +136,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 				}
 
 				if wsApiRequest.Method == OrderTrade {
-					logrus.Info(wsApiRequest)
+					// logrus.Info(wsApiRequest)
 				}
 
 				msgC <- msg
