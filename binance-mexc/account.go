@@ -16,14 +16,17 @@ import (
 )
 
 type Account struct {
-	StableSymbolAsset  Asset
-	BinanceSymbolAsset Asset
-	MexcSymbolAsset    Asset
+	stableSymbolAsset  Asset
+	binanceSymbolAsset Asset
+	mexcSymbolAsset    Asset
 
-	OrderIDsCh    chan OrderIds
-	BinanceOrders map[string]Order
-	MexcOrders    map[string]Order
-	L             sync.RWMutex
+	OrderIDsCh chan OrderIds
+
+	binanceOrders   map[string]Order
+	mexcOrders      map[string]Order
+	binanceOrdersCh chan Order
+	mexcOrdersCh    chan Order
+	L               sync.RWMutex
 }
 
 type Asset struct {
@@ -42,18 +45,21 @@ type OrderIds struct {
 }
 
 type Order struct {
+	ID    string
 	Price decimal.Decimal
 	Qty   decimal.Decimal
 }
 
 func NewAccount(symbolPair SymbolPair) *Account {
 	return &Account{
-		StableSymbolAsset:  Asset{Symbol: symbolPair.StableCoinSymbol},
-		BinanceSymbolAsset: Asset{Symbol: symbolPair.BinanceSymbol},
-		MexcSymbolAsset:    Asset{Symbol: symbolPair.MexcSymbol},
+		stableSymbolAsset:  Asset{Symbol: symbolPair.StableCoinSymbol},
+		binanceSymbolAsset: Asset{Symbol: symbolPair.BinanceSymbol},
+		mexcSymbolAsset:    Asset{Symbol: symbolPair.MexcSymbol},
 		OrderIDsCh:         make(chan OrderIds),
-		BinanceOrders:      make(map[string]Order),
-		MexcOrders:         make(map[string]Order),
+		binanceOrders:      make(map[string]Order),
+		mexcOrders:         make(map[string]Order),
+		binanceOrdersCh:    make(chan Order),
+		mexcOrdersCh:       make(chan Order),
 	}
 }
 
@@ -62,6 +68,28 @@ func (a *Account) Start() {
 		for {
 			orderIDs := <-a.OrderIDsCh
 			a.profitLog(orderIDs)
+		}
+	}()
+
+	go func() {
+		for {
+			order := <-a.binanceOrdersCh
+			a.L.Lock()
+			a.binanceOrders[order.ID] = order
+			a.L.Unlock()
+
+			logrus.Error(order.ID)
+		}
+	}()
+
+	go func() {
+		for {
+			order := <-a.mexcOrdersCh
+			a.L.Lock()
+			a.mexcOrders[order.ID] = order
+			a.L.Unlock()
+
+			logrus.Error(order.ID)
 		}
 	}()
 
@@ -143,14 +171,12 @@ func (a *Account) Start() {
 				mexcListenKey,
 				func(event *mexc.WsPrivateDealsEvent) {
 					// logrus.WithFields(logrus.Fields{"server": "mexc account"}).Infof("%+v", event)
-					a.L.Lock()
-					defer a.L.Unlock()
-
 					if strings.TrimSpace(event.Price) == "" {
 						return
 					}
 
-					a.MexcOrders[event.DealsData.OrderId] = Order{
+					a.mexcOrdersCh <- Order{
+						ID:    event.DealsData.OrderId,
 						Price: stringToDecimal(event.Price),
 						Qty:   stringToDecimal(event.Qty),
 					}
@@ -179,16 +205,16 @@ func (a *Account) Start() {
 
 func (a *Account) accountUpdate(accountUpdates binancesdk.WsAccountUpdateList) {
 	for _, accountUpdate := range accountUpdates.WsAccountUpdates {
-		if accountUpdate.Asset == a.StableSymbolAsset.Symbol {
+		if accountUpdate.Asset == a.stableSymbolAsset.Symbol {
 		}
-		if accountUpdate.Asset == a.BinanceSymbolAsset.Symbol {
+		if accountUpdate.Asset == a.binanceSymbolAsset.Symbol {
 		}
 	}
 
 	logrus.Infof("账户余额更新: %v: %v %v\n %v: %v %v\n %v: %v %v\n",
-		a.StableSymbolAsset.Symbol, a.StableSymbolAsset.Free, a.StableSymbolAsset.Locked,
-		a.BinanceSymbolAsset.Symbol, a.BinanceSymbolAsset.Free, a.BinanceSymbolAsset.Locked,
-		a.MexcSymbolAsset.Symbol, a.MexcSymbolAsset.Free, a.MexcSymbolAsset.Locked)
+		a.stableSymbolAsset.Symbol, a.stableSymbolAsset.Free, a.stableSymbolAsset.Locked,
+		a.binanceSymbolAsset.Symbol, a.binanceSymbolAsset.Free, a.binanceSymbolAsset.Locked,
+		a.mexcSymbolAsset.Symbol, a.mexcSymbolAsset.Free, a.mexcSymbolAsset.Locked)
 }
 
 func (a *Account) orderUpdate(orderUpdate binancesdk.WsOrderUpdate) {
@@ -209,9 +235,8 @@ func (a *Account) orderUpdate(orderUpdate binancesdk.WsOrderUpdate) {
 		// )
 	case "FILLED":
 		// logrus.Infof("[FILLED]: %+v\n", orderUpdate)
-		a.L.Lock()
-		defer a.L.Unlock()
-		a.BinanceOrders[orderUpdate.ClientOrderId] = Order{
+		a.binanceOrdersCh <- Order{
+			ID:    orderUpdate.ClientOrderId,
 			Price: stringToDecimal(orderUpdate.LatestPrice),
 			Qty:   stringToDecimal(orderUpdate.FilledVolume),
 		}
@@ -348,7 +373,7 @@ func (a *Account) getBinanceOrder(id string) (Order, bool) {
 	a.L.RLock()
 	defer a.L.RUnlock()
 
-	v, ok := a.BinanceOrders[id]
+	v, ok := a.binanceOrders[id]
 	return v, ok
 }
 
@@ -356,7 +381,7 @@ func (a *Account) getMexcOrder(id string) (Order, bool) {
 	a.L.RLock()
 	defer a.L.RUnlock()
 
-	v, ok := a.MexcOrders[id]
+	v, ok := a.mexcOrders[id]
 	return v, ok
 }
 
