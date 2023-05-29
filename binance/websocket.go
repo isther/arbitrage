@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -53,7 +54,7 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 		for {
 			message := <-msgC
 			c.WriteMessage(websocket.TextMessage, message)
-			time.Sleep(10 * time.Millisecond)
+			logrus.Warn(string(message))
 		}
 	}()
 
