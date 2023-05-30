@@ -45,7 +45,7 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 	}
 
 	//BUG:c.SetReadLimit(655350)
-	msgC = make(chan []byte, 100)
+	msgC = make(chan []byte)
 	doneC = make(chan struct{})
 	stopC = make(chan struct{})
 
