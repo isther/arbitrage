@@ -16,6 +16,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	binanceWsServiceRestartCh = make(chan struct{})
+)
+
 type ArbitrageManager struct {
 	lock sync.RWMutex
 
@@ -121,7 +125,6 @@ func (b *ArbitrageManager) Start() {
 
 	wg.Add(1)
 	go func() {
-		restartCh := make(chan struct{})
 		for {
 			_, _ = b.websocketApiServiceManager.StartWsApi(
 				func(msg []byte) {
@@ -154,7 +157,7 @@ func (b *ArbitrageManager) Start() {
 				},
 				func(err error) {
 					logrus.Error("BinanceWsApiServiceManager: ", err)
-					restartCh <- struct{}{}
+					binanceWsServiceRestartCh <- struct{}{}
 					// panic(err)
 				},
 			)
@@ -162,7 +165,8 @@ func (b *ArbitrageManager) Start() {
 				wg.Done()
 			}
 
-			<-restartCh
+			<-binanceWsServiceRestartCh
+			logrus.Warn("BinanceWsApiServiceManager: Restart")
 		}
 	}()
 

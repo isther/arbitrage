@@ -252,6 +252,7 @@ func (a *Account) profitLog(orderIds OrderIds) {
 	openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, ok := a.getOrders(orderIds)
 	if !ok {
 		logrus.Warn("订单错误")
+		binanceWsServiceRestartCh <- struct{}{}
 		return
 	}
 
