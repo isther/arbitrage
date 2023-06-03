@@ -47,6 +47,7 @@ func NewArbitrageManager(symbolPairs SymbolPair) *ArbitrageManager {
 		binanceSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
 
 		websocketApiServiceManager: binance.NewWebsocketServiceManager(),
+		requestCh:                  make(chan *binance.WsApiRequest),
 
 		stableCoinSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
 		mexcSymbolEventCh:       make(chan *mexc.WsBookTickerEvent),
