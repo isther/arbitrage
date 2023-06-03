@@ -78,7 +78,7 @@ func TestWsApiMethod(t *testing.T) {
 	wg.Wait()
 }
 
-func TestWsApiKeepLive(t *testing.T) {
+func TestWsApiServerTime(t *testing.T) {
 	config.Load("../config.yaml")
 
 	var (
@@ -115,5 +115,68 @@ func TestWsApiKeepLive(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		WebsocketApiServiceManager.Send(NewServerTime())
 		reqCnt++
+	}
+}
+
+func TestWsApiTrade(t *testing.T) {
+	config.Load("../config.yaml")
+
+	var (
+		// apiKey    = config.Config.BinanceApiKey
+		// secretKey = config.Config.BinanceSecretKey
+		// doneC                      chan struct{}
+		// stopC                      chan struct{}
+		WebsocketApiServiceManager = NewWebsocketServiceManager()
+
+		reqCnt   = 0
+		replyCnt = 0
+	)
+
+	_, _ = WebsocketApiServiceManager.StartWsApi(
+		func(msg []byte) {
+			wsApiEvent, method, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
+			// _, _, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
+			if err != nil {
+				log.Println("[ERROR] Failed to parse wsApiEvent:", err)
+				return
+			}
+
+			log.Println(fmt.Sprintf("[%s]: %v", method, wsApiEvent.OrderTradeResponse.ClientOrderID))
+			if wsApiEvent.OrderTradeResponse.ClientOrderID == "" {
+				log.Println("ERROR")
+			}
+			replyCnt++
+			t.Log(reqCnt, replyCnt)
+		},
+		func(err error) {
+			panic(err)
+		},
+	)
+
+	for {
+		// Buy
+		id := fmt.Sprintf("%d", time.Now().UnixNano())
+		go WebsocketApiServiceManager.Send(
+			NewOrderTrade(
+				NewOrderTradeParmes(config.Config.BinanceApiKey).
+					NewOrderRespType(NewOrderRespTypeRESULT).
+					Symbol("BTCTUSD").Side(SideTypeBuy).
+					OrderType(OrderTypeMarket).Quantity("0.000379").
+					NewClientOrderID("B" + id).Signature(config.Config.BinanceSecretKey),
+			),
+		)
+
+		// Sell
+		go WebsocketApiServiceManager.Send(
+			NewOrderTrade(
+				NewOrderTradeParmes(config.Config.BinanceApiKey).
+					NewOrderRespType(NewOrderRespTypeRESULT).
+					Symbol("BTCTUSD").Side(SideTypeSell).
+					OrderType(OrderTypeMarket).Quantity("0.000379").
+					NewClientOrderID("S" + id).Signature(config.Config.BinanceSecretKey),
+			),
+		)
+		reqCnt += 2
+		time.Sleep(5 * time.Second)
 	}
 }

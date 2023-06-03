@@ -18,6 +18,7 @@ import (
 
 var (
 	binanceWsServiceRestartCh = make(chan struct{})
+	tradeRequestCh            = make(chan *binance.WsApiRequest)
 )
 
 type ArbitrageManager struct {
@@ -27,7 +28,6 @@ type ArbitrageManager struct {
 
 	// websocket server
 	websocketApiServiceManager *binance.WebsocketServiceManager
-	requestCh                  chan *binance.WsApiRequest
 
 	binanceSymbolEventCh    chan *binancesdk.WsBookTickerEvent
 	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent
@@ -47,7 +47,6 @@ func NewArbitrageManager(symbolPairs SymbolPair) *ArbitrageManager {
 		binanceSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
 
 		websocketApiServiceManager: binance.NewWebsocketServiceManager(),
-		requestCh:                  make(chan *binance.WsApiRequest),
 
 		stableCoinSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
 		mexcSymbolEventCh:       make(chan *mexc.WsBookTickerEvent),
@@ -64,7 +63,7 @@ func (b *ArbitrageManager) Start() {
 
 	go func() {
 		for {
-			b.websocketApiServiceManager.Send(<-b.requestCh)
+			b.websocketApiServiceManager.Send(<-tradeRequestCh)
 		}
 	}()
 
@@ -246,7 +245,7 @@ func (b *ArbitrageManager) Start() {
 }
 
 func (b *ArbitrageManager) StartTask(task *Task, OrderIDsCh chan OrderIds) {
-	task.run(b.requestCh,
+	task.run(tradeRequestCh,
 		b.binanceSymbolEventCh,
 		b.stableCoinSymbolEventCh,
 		b.mexcSymbolEventCh,
