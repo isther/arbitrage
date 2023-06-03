@@ -570,9 +570,16 @@ func (t *Task) profitLog(closeBinancePrice, closeMexcPrice decimal.Decimal) {
 }
 
 func (t *Task) binanceTrade(newClientOrderId, symbol string, side binancesdk.SideType, qty string) {
-	binancesdk.NewClient(t.binanceApiKey, t.binanceSecretKey).
-		NewCreateOrderService().
+	quantityDecimal, _ := decimal.NewFromString(qty)
+	quantityDecimal = quantityDecimal.Truncate(5).Truncate(8)
+	qty = quantityDecimal.String()
+
+	res, err := binancesdk.NewClient(t.binanceApiKey, t.binanceSecretKey).NewCreateOrderService().
 		Symbol(symbol).Side(side).Type(binancesdk.OrderTypeMarket).
 		Quantity(qty).NewClientOrderID(newClientOrderId).
 		Do(context.Background())
+	if err != nil {
+		logrus.Error(res)
+		panic(err)
+	}
 }
