@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/isther/arbitrage/config"
 )
@@ -75,4 +76,44 @@ func TestWsApiMethod(t *testing.T) {
 	// wg.Add(1)
 
 	wg.Wait()
+}
+
+func TestWsApiKeepLive(t *testing.T) {
+	config.Load("../config.yaml")
+
+	var (
+		// apiKey    = config.Config.BinanceApiKey
+		// secretKey = config.Config.BinanceSecretKey
+		// doneC                      chan struct{}
+		// stopC                      chan struct{}
+		WebsocketApiServiceManager = NewWebsocketServiceManager()
+
+		reqCnt   = 0
+		replyCnt = 0
+	)
+
+	_, _ = WebsocketApiServiceManager.StartWsApi(
+		func(msg []byte) {
+			wsApiEvent, method, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
+			// _, _, err := WebsocketApiServiceManager.ParseWsApiEvent(msg)
+			if err != nil {
+				log.Println("[ERROR] Failed to parse wsApiEvent:", err)
+				return
+			}
+
+			log.Println(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+			replyCnt++
+			t.Log(reqCnt, replyCnt)
+		},
+		func(err error) {
+			panic(err)
+		},
+	)
+	t.Log("start")
+
+	for {
+		time.Sleep(1 * time.Second)
+		WebsocketApiServiceManager.Send(NewServerTime())
+		reqCnt++
+	}
 }

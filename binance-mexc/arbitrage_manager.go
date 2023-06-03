@@ -27,6 +27,7 @@ type ArbitrageManager struct {
 
 	// websocket server
 	websocketApiServiceManager *binance.WebsocketServiceManager
+	requestCh                  chan *binance.WsApiRequest
 
 	binanceSymbolEventCh    chan *binancesdk.WsBookTickerEvent
 	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent
@@ -59,6 +60,10 @@ func (b *ArbitrageManager) Start() {
 		started atomic.Bool
 		wg      sync.WaitGroup
 	)
+
+	go func() {
+		b.websocketApiServiceManager.Send(<-b.requestCh)
+	}()
 
 	started.Store(false)
 
@@ -176,7 +181,7 @@ func (b *ArbitrageManager) Start() {
 	// Send request to get server time
 	go func() {
 		for {
-			b.websocketApiServiceManager.RequestCh <- binance.NewServerTime()
+			b.websocketApiServiceManager.Send(binance.NewServerTime())
 			time.Sleep(1 * time.Second)
 		}
 	}()
@@ -237,7 +242,7 @@ func (b *ArbitrageManager) Start() {
 }
 
 func (b *ArbitrageManager) StartTask(task *Task, OrderIDsCh chan OrderIds) {
-	task.run(b.websocketApiServiceManager.RequestCh,
+	task.run(b.requestCh,
 		b.binanceSymbolEventCh,
 		b.stableCoinSymbolEventCh,
 		b.mexcSymbolEventCh,
