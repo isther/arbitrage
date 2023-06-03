@@ -54,7 +54,6 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 		for {
 			message := <-msgC
 			c.WriteMessage(websocket.TextMessage, message)
-			logrus.Warn(string(message))
 		}
 	}()
 
