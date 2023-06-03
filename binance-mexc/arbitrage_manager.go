@@ -63,7 +63,9 @@ func (b *ArbitrageManager) Start() {
 	)
 
 	go func() {
-		b.websocketApiServiceManager.Send(<-b.requestCh)
+		for {
+			b.websocketApiServiceManager.Send(<-b.requestCh)
+		}
 	}()
 
 	started.Store(false)
