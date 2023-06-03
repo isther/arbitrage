@@ -90,12 +90,12 @@ func (wsApiEvent *WsApiEvent) parseEvent(method WsApiMethod) error {
 
 type WebsocketServiceManager struct {
 	events    map[string]WsApiMethod
-	RequestCh chan *WsApiRequest
+	requestCh chan *WsApiRequest
 }
 
 func NewWebsocketServiceManager() *WebsocketServiceManager {
 	return &WebsocketServiceManager{
-		RequestCh: make(chan *WsApiRequest),
+		requestCh: make(chan *WsApiRequest),
 		events:    make(map[string]WsApiMethod),
 	}
 }
@@ -129,7 +129,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 	go func() {
 		for {
 			select {
-			case wsApiRequest := <-w.RequestCh:
+			case wsApiRequest := <-w.requestCh:
 				msg, err := json.Marshal(wsApiRequest)
 				if err != nil {
 					logrus.Error("Failed to marshal wsApiRequest:", err)
@@ -150,7 +150,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 }
 
 func (w *WebsocketServiceManager) Send(req *WsApiRequest) {
-	w.RequestCh <- req
+	w.requestCh <- req
 }
 
 func (w *WebsocketServiceManager) ParseWsApiEvent(result []byte) (*WsApiEvent, WsApiMethod, error) {
