@@ -144,6 +144,7 @@ func (b *ArbitrageManager) Start() {
 						if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "C") ||
 							strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "FC") {
 						} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
+							logrus.Info(wsApiEvent.RateLimits)
 						}
 					case binance.ServerTime:
 						if decimal.NewFromInt(time.Now().UnixMilli() - wsApiEvent.ServerTime.ServerTime).
