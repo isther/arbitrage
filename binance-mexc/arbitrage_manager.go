@@ -2,7 +2,6 @@ package binancemexc
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -146,8 +145,9 @@ func (b *ArbitrageManager) Start() {
 						if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "C") ||
 							strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "FC") {
 						} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
-							logrus.Info(wsApiEvent.RateLimits)
+							// logrus.Info(wsApiEvent.RateLimits)
 						}
+						logrus.Info("tradeInfo", wsApiEvent.OrderTradeResponse)
 					case binance.ServerTime:
 						if decimal.NewFromInt(time.Now().UnixMilli() - wsApiEvent.ServerTime.ServerTime).
 							GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
@@ -159,8 +159,8 @@ func (b *ArbitrageManager) Start() {
 								unPauseCh <- struct{}{}
 							}
 						}
-					default:
-						logrus.Warn(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+						// default:
+						// logrus.Warn(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
 					}
 				},
 				func(err error) {

@@ -1,10 +1,12 @@
 package binance
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -31,7 +33,7 @@ func newWsConfig(endpoint string) *WsConfig {
 	}
 }
 
-var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msgC chan []byte, doneC, stopC chan struct{}, err error) {
+var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (reqC chan *WsApiRequest, doneC, stopC chan struct{}, err error) {
 	Dialer := websocket.Dialer{
 		Proxy:             http.ProxyFromEnvironment,
 		HandshakeTimeout:  45 * time.Second,
@@ -44,15 +46,21 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (msg
 	}
 
 	//BUG:c.SetReadLimit(655350)
-	msgC = make(chan []byte)
+	reqC = make(chan *WsApiRequest)
 	doneC = make(chan struct{})
 	stopC = make(chan struct{})
 
 	// Send messages to binance.
 	go func() {
 		for {
-			message := <-msgC
-			c.WriteMessage(websocket.TextMessage, message)
+			req := <-reqC
+			go func() {
+				msg, err := json.Marshal(req)
+				if err != nil {
+					logrus.Error("Failed to marshal wsApiRequest:", err)
+				}
+				c.WriteMessage(websocket.TextMessage, msg)
+			}()
 		}
 	}()
 

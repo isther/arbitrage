@@ -220,12 +220,12 @@ func (a *Account) accountUpdate(accountUpdates binancesdk.WsAccountUpdateList) {
 func (a *Account) orderUpdate(orderUpdate binancesdk.WsOrderUpdate) {
 	switch orderUpdate.Status {
 	case "NEW":
-		// logrus.Infof("[CREATE]: ID: %s, side %s, price: %s, quantity: %s\n",
-		// 	orderUpdate.ClientOrderId,
-		// 	binancesdk.SideType(orderUpdate.Side),
-		// 	orderUpdate.Price,
-		// 	orderUpdate.Volume,
-		// )
+		logrus.Infof("[CREATE]: ID: %s, side %s, price: %s, quantity: %s\n",
+			orderUpdate.ClientOrderId,
+			binancesdk.SideType(orderUpdate.Side),
+			orderUpdate.Price,
+			orderUpdate.Volume,
+		)
 	case "CANCELED":
 		// logrus.Infof("[CANCELED]: ID: %s, side %s, price: %s, quantity: %s\n",
 		// 	orderUpdate.ClientOrderId,
@@ -252,7 +252,7 @@ func (a *Account) profitLog(orderIds OrderIds) {
 	openBinanceOrder, openMexcOrder, closeBinanceOrder, closeMexcOrder, ok := a.getOrders(orderIds)
 	if !ok {
 		logrus.Warn("订单错误")
-		binanceWsServiceRestartCh <- struct{}{}
+		// binanceWsServiceRestartCh <- struct{}{}
 		return
 	}
 

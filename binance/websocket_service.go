@@ -95,15 +95,14 @@ type WebsocketServiceManager struct {
 
 func NewWebsocketServiceManager() *WebsocketServiceManager {
 	return &WebsocketServiceManager{
-		requestCh: make(chan *WsApiRequest),
-		events:    make(map[string]WsApiMethod),
+		// requestCh: make(chan *WsApiRequest),
+		events: make(map[string]WsApiMethod),
 	}
 }
 
 func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}) {
 	logrus.Debug("Start binance websocket api service.")
 	var (
-		msgC  chan []byte
 		doneC chan struct{}
 		stopC chan struct{}
 		err   error
@@ -115,7 +114,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 	cfg := newWsConfig(endpoint)
 
 	for {
-		msgC, doneC, stopC, err = wsServe(cfg, wsHandler, errHandler)
+		w.requestCh, doneC, stopC, err = wsServe(cfg, wsHandler, errHandler)
 		if err == nil {
 			break
 		}
@@ -125,26 +124,6 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 		continue
 	}
 	logrus.Debug("Connect to websocket server successfully.")
-
-	go func() {
-		for {
-			select {
-			case wsApiRequest := <-w.requestCh:
-				msg, err := json.Marshal(wsApiRequest)
-				if err != nil {
-					logrus.Error("Failed to marshal wsApiRequest:", err)
-				}
-
-				if wsApiRequest.Method == OrderTrade {
-					// logrus.Info(wsApiRequest)
-				}
-
-				msgC <- msg
-				w.events[wsApiRequest.ID] = wsApiRequest.Method
-				// log.Println("Send wsApiRequest successfully: ", wsApiRequest)
-			}
-		}
-	}()
 
 	return doneC, stopC
 }
