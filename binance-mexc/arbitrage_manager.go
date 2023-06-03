@@ -17,7 +17,6 @@ import (
 
 var (
 	binanceWsServiceRestartCh = make(chan struct{})
-	tradeRequestCh            = make(chan *binance.WsApiRequest)
 )
 
 type ArbitrageManager struct {
@@ -60,11 +59,11 @@ func (b *ArbitrageManager) Start() {
 		wg      sync.WaitGroup
 	)
 
-	go func() {
-		for {
-			b.websocketApiServiceManager.Send(<-tradeRequestCh)
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		b.websocketApiServiceManager.Send(<-tradeRequestCh)
+	// 	}
+	// }()
 
 	started.Store(false)
 
@@ -245,7 +244,7 @@ func (b *ArbitrageManager) Start() {
 }
 
 func (b *ArbitrageManager) StartTask(task *Task, OrderIDsCh chan OrderIds) {
-	task.run(tradeRequestCh,
+	task.run(
 		b.binanceSymbolEventCh,
 		b.stableCoinSymbolEventCh,
 		b.mexcSymbolEventCh,
