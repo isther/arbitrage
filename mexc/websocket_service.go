@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -187,7 +186,6 @@ func StartWsDealsInfoServer(listenkey string, handler WsPrivateDealsHandler, err
 			break
 		}
 		logrus.Error(err)
-		time.Sleep(time.Duration(ReconnectMexcAccountInfoSleepDuration) * time.Millisecond)
 	}
 	logrus.Debug("Connect to mexc deals info websocket server successfully.")
 

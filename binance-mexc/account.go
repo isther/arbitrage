@@ -167,7 +167,7 @@ func (a *Account) Start() {
 		}()
 
 		for {
-			_, _ = mexc.StartWsDealsInfoServer(
+			doneC, stopC := mexc.StartWsDealsInfoServer(
 				mexcListenKey,
 				func(event *mexc.WsPrivateDealsEvent) {
 					// logrus.WithFields(logrus.Fields{"server": "mexc account"}).Infof("%+v", event)
@@ -184,7 +184,6 @@ func (a *Account) Start() {
 				func(err error) {
 					if err != nil {
 						logrus.WithFields(logrus.Fields{"server": "mexc account"}).Error(err)
-						time.Sleep(time.Duration(mexc.ReconnectMexcAccountInfoSleepDuration) * time.Millisecond)
 						restartCh <- struct{}{}
 					}
 				},
@@ -193,8 +192,15 @@ func (a *Account) Start() {
 			if !started.Load() {
 				startMexcWsDone <- struct{}{}
 			}
+			select {
+			case <-doneC:
+			case <-restartCh:
+			}
 
-			<-restartCh
+			go func() {
+				stopC <- struct{}{}
+			}()
+			time.Sleep(time.Duration(mexc.ReconnectMexcAccountInfoSleepDuration) * time.Millisecond)
 		}
 	}()
 
