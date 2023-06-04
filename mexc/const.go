@@ -1,7 +1,7 @@
 package mexc
 
 var (
-	reconnectMexcAccountInfoSleepDuration int64 = 1000 //ms
+	ReconnectMexcAccountInfoSleepDuration int64 = 1000 //ms
 )
 
 const (

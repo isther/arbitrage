@@ -184,6 +184,7 @@ func (a *Account) Start() {
 				func(err error) {
 					if err != nil {
 						logrus.WithFields(logrus.Fields{"server": "mexc account"}).Error(err)
+						time.Sleep(time.Duration(mexc.ReconnectMexcAccountInfoSleepDuration) * time.Millisecond)
 						restartCh <- struct{}{}
 					}
 				},
