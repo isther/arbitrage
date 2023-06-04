@@ -121,7 +121,7 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 
 		logrus.Errorf("Failed to connect to websocket server: %v, reconnect server: %d", err, cnt)
 		cnt++
-		continue
+		time.Sleep(500 * time.Millisecond)
 	}
 	logrus.Debug("Connect to websocket server successfully.")
 

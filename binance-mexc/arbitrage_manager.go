@@ -130,6 +130,14 @@ func (b *ArbitrageManager) Start() {
 
 	wg.Add(1)
 	go func() {
+		// Send request to get server time
+		go func() {
+			for {
+				b.websocketApiServiceManager.Send(binance.NewServerTime())
+				time.Sleep(1 * time.Second)
+			}
+		}()
+
 		for {
 			_, _ = b.websocketApiServiceManager.StartWsApi(
 				func(msg []byte) {
@@ -180,67 +188,8 @@ func (b *ArbitrageManager) Start() {
 	wg.Wait()
 	started.Store(true)
 
-	// Send request to get server time
-	go func() {
-		for {
-			b.websocketApiServiceManager.Send(binance.NewServerTime())
-			time.Sleep(1 * time.Second)
-		}
-	}()
-
-	go func() {
-		var restartCh = make(chan struct{})
-		for {
-			_, _ = binance.StartKlineInfo(
-				"BTCTUSD",
-				"1m",
-				func(event *binancesdk.WsKlineEvent) {
-					high, _ := decimal.NewFromString(event.Kline.High)
-					low, _ := decimal.NewFromString(event.Kline.Low)
-
-					if high.Div(low).Sub(decimal.NewFromInt(1)).Mul(klineRatioBase).
-						GreaterThanOrEqual(decimal.NewFromFloat(config.Config.KlineRatio)) {
-						if !Paused.Load() {
-							pauseCh <- struct{}{}
-							logrus.Warn("BTC振幅过高，已暂停")
-							time.Sleep(time.Duration(config.Config.KlinePauseDuration) * time.Millisecond)
-							logrus.Warn("BTC振幅过高暂停结束")
-							unPauseCh <- struct{}{}
-						}
-					}
-				},
-				func(err error) {
-					if err != nil {
-						logrus.WithFields(logrus.Fields{"server": "kline"}).Error(err)
-						restartCh <- struct{}{}
-					}
-				},
-			)
-
-			<-restartCh
-		}
-	}()
-
-	go func() {
-		for {
-			serverTime, err := newMexcClient().NewServerTimeService().Do(context.Background())
-			if err != nil {
-				logrus.Error("Failed to get server time:", err)
-				continue
-			}
-			if decimal.NewFromInt(time.Now().UnixMilli() - serverTime).
-				GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
-				if !Paused.Load() {
-					pauseCh <- struct{}{}
-					logrus.Warn("抹茶超时，已暂停")
-					time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
-					logrus.Warn("抹茶超时暂停结束")
-					unPauseCh <- struct{}{}
-				}
-			}
-			time.Sleep(1 * time.Second)
-		}
-	}()
+	go b.startCheckBinanceKline()
+	go b.startCheckMexcServerTime()
 }
 
 func (b *ArbitrageManager) StartTask(task *Task, OrderIDsCh chan OrderIds) {
@@ -274,6 +223,7 @@ func (b *ArbitrageManager) startBinanceBookTickerWebsocket(
 			break
 		}
 		logrus.Error(err)
+		time.Sleep(time.Duration(reconnectBinanceBookTickerSleepDuration) * time.Millisecond)
 	}
 	logrus.Debug("Connect to mexc bookticker info websocket server successfully.")
 
@@ -301,8 +251,63 @@ func (b *ArbitrageManager) startMexcBookTickerWebsocket(
 			break
 		}
 		logrus.Error(err)
+		time.Sleep(time.Duration(reconnectMexcBookTickerSleepDuration) * time.Millisecond)
 	}
 	logrus.Debug("Connect to mexc bookticker info websocket server successfully.")
 
 	return doneC, stopC
+}
+
+func (b *ArbitrageManager) startCheckBinanceKline() {
+	var restartCh = make(chan struct{})
+	for {
+		_, _ = binance.StartKlineInfo(
+			"BTCTUSD",
+			"1m",
+			func(event *binancesdk.WsKlineEvent) {
+				high, _ := decimal.NewFromString(event.Kline.High)
+				low, _ := decimal.NewFromString(event.Kline.Low)
+
+				if high.Div(low).Sub(decimal.NewFromInt(1)).Mul(klineRatioBase).
+					GreaterThanOrEqual(decimal.NewFromFloat(config.Config.KlineRatio)) {
+					if !Paused.Load() {
+						pauseCh <- struct{}{}
+						logrus.Warn("BTC振幅过高，已暂停")
+						time.Sleep(time.Duration(config.Config.KlinePauseDuration) * time.Millisecond)
+						logrus.Warn("BTC振幅过高暂停结束")
+						unPauseCh <- struct{}{}
+					}
+				}
+			},
+			func(err error) {
+				if err != nil {
+					logrus.WithFields(logrus.Fields{"server": "kline"}).Error(err)
+					restartCh <- struct{}{}
+				}
+			},
+		)
+
+		<-restartCh
+	}
+}
+
+func (b *ArbitrageManager) startCheckMexcServerTime() {
+	for {
+		serverTime, err := newMexcClient().NewServerTimeService().Do(context.Background())
+		if err != nil {
+			logrus.Error("Failed to get server time:", err)
+			continue
+		}
+		if decimal.NewFromInt(time.Now().UnixMilli() - serverTime).
+			GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
+			if !Paused.Load() {
+				pauseCh <- struct{}{}
+				logrus.Warn("抹茶超时，已暂停")
+				time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
+				logrus.Warn("抹茶超时暂停结束")
+				unPauseCh <- struct{}{}
+			}
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
