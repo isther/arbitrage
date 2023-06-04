@@ -579,7 +579,6 @@ func (t *Task) binanceTrade(newClientOrderId, symbol string, side binancesdk.Sid
 		Quantity(qty).NewClientOrderID(newClientOrderId).
 		Do(context.Background())
 	if err != nil {
-		logrus.Error(res)
-		panic(err)
+		logrus.Error(res, err)
 	}
 }
