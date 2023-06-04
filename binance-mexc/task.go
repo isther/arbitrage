@@ -155,7 +155,7 @@ func (t *Task) trade(
 			ok, t.closeRatio, t.openStablePrice, t.openBinancePrice, t.openMexcPrice,
 				orderIDs.OpenBinanceID, orderIDs.OpenMexcID = t.open()
 			if ok {
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(1888 * time.Millisecond)
 				break
 			}
 		}

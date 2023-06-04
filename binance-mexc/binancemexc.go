@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	qty = "0.000379"
+	qty = "0.0004"
 )
 
 var (
