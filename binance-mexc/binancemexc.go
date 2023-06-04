@@ -8,9 +8,7 @@ import (
 )
 
 const (
-	qty                                           = "0.000379"
-	reconnectBinanceBookTickerSleepDuration int64 = 1000 // ms
-	reconnectMexcBookTickerSleepDuration    int64 = 1000 // ms
+	qty = "0.000379"
 )
 
 var (

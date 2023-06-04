@@ -81,6 +81,7 @@ func (b *ArbitrageManager) Start() {
 					}
 				},
 				func(err error) {
+					logrus.Error("BinanceBookTicker: ", err)
 					restartCh <- struct{}{}
 					// panic(err)
 				},
@@ -109,6 +110,7 @@ func (b *ArbitrageManager) Start() {
 					b.mexcSymbolEventCh <- event
 				},
 				func(err error) {
+					logrus.Error("MexcBookTicker: ", err)
 					restartCh <- struct{}{}
 					// panic(err)
 				},
@@ -181,7 +183,7 @@ func (b *ArbitrageManager) Start() {
 			}
 
 			<-binanceWsServiceRestartCh
-			logrus.Warn("BinanceWsApiServiceManager: Restart")
+			logrus.Debug("BinanceWsApiServiceManager: Restart")
 		}
 	}()
 
@@ -223,7 +225,6 @@ func (b *ArbitrageManager) startBinanceBookTickerWebsocket(
 			break
 		}
 		logrus.Error(err)
-		time.Sleep(time.Duration(reconnectBinanceBookTickerSleepDuration) * time.Millisecond)
 	}
 	logrus.Debug("Connect to mexc bookticker info websocket server successfully.")
 
@@ -251,7 +252,6 @@ func (b *ArbitrageManager) startMexcBookTickerWebsocket(
 			break
 		}
 		logrus.Error(err)
-		time.Sleep(time.Duration(reconnectMexcBookTickerSleepDuration) * time.Millisecond)
 	}
 	logrus.Debug("Connect to mexc bookticker info websocket server successfully.")
 

@@ -1,5 +1,9 @@
 package mexc
 
+var (
+	reconnectMexcAccountInfoSleepDuration int64 = 1000 //ms
+)
+
 const (
 	baseHttpURL   = "https://api.mexc.com"
 	serverTimeApi = "/api/v3/time"
