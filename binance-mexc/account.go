@@ -104,7 +104,7 @@ func (a *Account) startBinanceAccountServer() {
 		binanceListenKey = binance.CreateListenKey()
 		l                = binance.Logger.WithField("websocket server", "UserDataEvent")
 	)
-	defer binance.CloseListenKey(binanceListenKey)
+	// defer binance.CloseListenKey(binanceListenKey)
 
 	go func() {
 		for {
@@ -155,7 +155,7 @@ func (a *Account) startMexcWsDealsInfoServer() {
 		l.Panicf("get mexc listen key error: %v", err)
 	}
 	// close listen key
-	defer client.NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
+	// defer client.NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
 
 	// keep listen key
 	go func() {
