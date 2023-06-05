@@ -12,11 +12,12 @@ const (
 )
 
 var (
-	Paused         atomic.Bool
-	pauseCh        = make(chan struct{})
-	unPauseCh      = make(chan struct{})
-	klineRatioBase = decimal.NewFromInt(10000)
-	base           = decimal.NewFromInt(10000)
+	Paused                                atomic.Bool
+	pauseCh                                     = make(chan struct{})
+	unPauseCh                                   = make(chan struct{})
+	klineRatioBase                              = decimal.NewFromInt(10000)
+	base                                        = decimal.NewFromInt(10000)
+	reconnectMexcAccountInfoSleepDuration int64 = 1000 //ms
 )
 
 func init() {

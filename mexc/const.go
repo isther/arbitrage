@@ -1,7 +1,9 @@
 package mexc
 
+import "github.com/sirupsen/logrus"
+
 var (
-	ReconnectMexcAccountInfoSleepDuration int64 = 1000 //ms
+	Logger = logrus.WithField("platform", "mexc")
 )
 
 const (

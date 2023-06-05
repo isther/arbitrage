@@ -6,7 +6,6 @@ import (
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 )
 
 type AccountStatusParams struct {
@@ -96,26 +95,4 @@ func WsUserData(apiKey string, secretKey string) {
 	<-doneC
 
 	return
-}
-
-func StartWsUserData(listenKey string, wsHandler binancesdk.WsUserDataHandler, errHandler binancesdk.ErrHandler) (
-	chan struct{},
-	chan struct{},
-) {
-	var (
-		err   error
-		doneC chan struct{}
-		stopC chan struct{}
-	)
-
-	for {
-		doneC, stopC, err = binancesdk.WsUserDataServe(listenKey, wsHandler, errHandler)
-		if err == nil {
-			break
-		}
-		logrus.Error(err)
-	}
-	logrus.Debug("Connect to binance user-data websocket server successfully.")
-
-	return doneC, stopC
 }

@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -101,7 +99,7 @@ func NewWebsocketServiceManager() *WebsocketServiceManager {
 }
 
 func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}) {
-	logrus.Debug("Start binance websocket api service.")
+	Logger.Debug("Start binance websocket api service.")
 	var (
 		doneC chan struct{}
 		stopC chan struct{}
@@ -119,11 +117,11 @@ func (w *WebsocketServiceManager) StartWsApi(wsHandler WsHandler, errHandler Err
 			break
 		}
 
-		logrus.Errorf("Failed to connect to websocket server: %v, reconnect server: %d", err, cnt)
+		Logger.Errorf("Failed to connect to websocket server: %v, reconnect server: %d", err, cnt)
 		cnt++
 		time.Sleep(500 * time.Millisecond)
 	}
-	logrus.Debug("Connect to websocket server successfully.")
+	Logger.Debug("Connect to websocket server successfully.")
 
 	return doneC, stopC
 }

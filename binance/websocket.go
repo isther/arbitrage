@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -57,7 +56,7 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (req
 			go func() {
 				msg, err := json.Marshal(req)
 				if err != nil {
-					logrus.Error("Failed to marshal wsApiRequest:", err)
+					Logger.Error("Failed to marshal wsApiRequest:", err)
 				}
 				c.WriteMessage(websocket.TextMessage, msg)
 			}()

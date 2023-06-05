@@ -1,5 +1,11 @@
 package binance
 
+import "github.com/sirupsen/logrus"
+
+var (
+	Logger = logrus.WithField("platform", "binance")
+)
+
 type WsApiMethod string
 
 // SideType define side type of order

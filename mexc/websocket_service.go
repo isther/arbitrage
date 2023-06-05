@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -170,27 +168,6 @@ type ListenKeyResponse struct {
 //		return wsServe(cfg, wsHandler, errHandler)
 //
 // }
-
-func StartWsDealsInfoServer(listenkey string, handler WsPrivateDealsHandler, errHandler ErrHandler) (
-	chan struct{},
-	chan struct{},
-) {
-	var (
-		err   error
-		doneC chan struct{}
-		stopC chan struct{}
-	)
-	for {
-		doneC, stopC, err = WsDealsInfoServe(listenkey, handler, errHandler)
-		if err == nil {
-			break
-		}
-		logrus.Error(err)
-	}
-	logrus.Debug("Connect to mexc deals info websocket server successfully.")
-
-	return doneC, stopC
-}
 
 func WsDealsInfoServe(listenkey string, handler WsPrivateDealsHandler, errHandler ErrHandler) (chan struct{}, chan struct{}, error) {
 	// 成交信息推送

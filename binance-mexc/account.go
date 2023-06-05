@@ -93,121 +93,106 @@ func (a *Account) Start() {
 		}
 	}()
 
+	a.startBinanceAccountServer()
+	a.startMexcWsDealsInfoServer()
+
+	logrus.WithFields(logrus.Fields{"server": "Account"}).Warn("Start account")
+}
+
+func (a *Account) startBinanceAccountServer() {
 	var (
-		started            atomic.Bool
-		startBinanceWsDone = make(chan struct{})
-		startMexcWsDone    = make(chan struct{})
+		binanceListenKey = binance.CreateListenKey()
+		l                = binance.Logger.WithField("websocket server", "UserDataEvent")
 	)
-	started.Store(false)
+	defer binance.CloseListenKey(binanceListenKey)
 
 	go func() {
-		var (
-			restartCh        = make(chan struct{})
-			binanceListenKey = binance.CreateListenKey()
-		)
-		defer binance.CloseListenKey(binanceListenKey)
-
-		go func() {
-			for {
-				time.Sleep(25 * time.Minute)
-				binance.KeepListenKey(binanceListenKey)
-			}
-		}()
-
 		for {
-			_, _ = binance.StartWsUserData(
-				binanceListenKey,
-				func(event *binancesdk.WsUserDataEvent) {
-					switch event.Event {
-					case binancesdk.UserDataEventTypeOutboundAccountPosition:
-						// a.accountUpdate(event.AccountUpdate)
-					case binancesdk.UserDataEventTypeBalanceUpdate:
-					case binancesdk.UserDataEventTypeExecutionReport:
-						a.orderUpdate(event.OrderUpdate)
-					}
-
-				},
-				func(err error) {
-					if err != nil {
-						logrus.Error(err)
-						restartCh <- struct{}{}
-					}
-				},
-			)
-
-			if !started.Load() {
-				startBinanceWsDone <- struct{}{}
-			}
-
-			<-restartCh
-		}
-	}()
-
-	go func() {
-		var (
-			restartCh     = make(chan struct{})
-			mexcListenKey string
-			err           error
-			client        = newMexcClient()
-		)
-
-		for {
-			mexcListenKey, err = client.NewStartUserStreamService().Do(context.Background())
-			if err != nil {
-				logrus.Warn("get mexc listen key error: ", err)
-			} else {
-				break
-			}
-		}
-		defer client.NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
-
-		go func() {
 			time.Sleep(25 * time.Minute)
-			client.NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
-		}()
-
-		for {
-			doneC, stopC := mexc.StartWsDealsInfoServer(
-				mexcListenKey,
-				func(event *mexc.WsPrivateDealsEvent) {
-					// logrus.WithFields(logrus.Fields{"server": "mexc account"}).Infof("%+v", event)
-					if strings.TrimSpace(event.Price) == "" {
-						return
-					}
-
-					a.mexcOrdersCh <- Order{
-						ID:    event.DealsData.OrderId,
-						Price: stringToDecimal(event.Price),
-						Qty:   stringToDecimal(event.Qty),
-					}
-				},
-				func(err error) {
-					if err != nil {
-						logrus.WithFields(logrus.Fields{"server": "mexc account"}).Error(err)
-						restartCh <- struct{}{}
-					}
-				},
-			)
-
-			if !started.Load() {
-				startMexcWsDone <- struct{}{}
-			}
-			select {
-			case <-doneC:
-			case <-restartCh:
-			}
-
-			go func() {
-				stopC <- struct{}{}
-			}()
-			time.Sleep(time.Duration(mexc.ReconnectMexcAccountInfoSleepDuration) * time.Millisecond)
+			binance.KeepListenKey(binanceListenKey)
 		}
 	}()
 
-	<-startBinanceWsDone
-	<-startMexcWsDone
-	started.Store(true)
-	logrus.WithFields(logrus.Fields{"server": "Account"}).Debug("Start account")
+	wsHandler := func(event *binancesdk.WsUserDataEvent) {
+		switch event.Event {
+		case binancesdk.UserDataEventTypeOutboundAccountPosition:
+			// a.accountUpdate(event.AccountUpdate)
+		case binancesdk.UserDataEventTypeBalanceUpdate:
+		case binancesdk.UserDataEventTypeExecutionReport:
+			a.orderUpdate(event.OrderUpdate)
+		}
+
+	}
+	errHandler := func(err error) {
+		if err != nil {
+			l.Errorf("%v, 3秒后重连...", err)
+			time.Sleep(3 * time.Millisecond)
+			a.startBinanceAccountServer()
+		}
+	}
+
+	doneC, stopC, err := binancesdk.WsUserDataServe(binanceListenKey, wsHandler, errHandler)
+	if err != nil {
+		l.Errorf("%v, 3秒后重连...", err)
+		time.Sleep(3 * time.Millisecond)
+		a.startBinanceAccountServer()
+	}
+	l.Warn("Succeed")
+
+	_ = doneC
+	_ = stopC
+}
+
+func (a *Account) startMexcWsDealsInfoServer() {
+	var (
+		client = newMexcClient()
+		l      = mexc.Logger.WithField("websocket server", "DealsInfo")
+	)
+
+	// create listen key
+	mexcListenKey, err := client.NewStartUserStreamService().Do(context.Background())
+	if err != nil {
+		l.Panicf("get mexc listen key error: %v", err)
+	}
+	// close listen key
+	defer client.NewCloseUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
+
+	// keep listen key
+	go func() {
+		time.Sleep(25 * time.Minute)
+		client.NewKeepaliveUserStreamService().ListenKey(mexcListenKey).Do(context.Background())
+	}()
+
+	handler := func(event *mexc.WsPrivateDealsEvent) {
+		if strings.TrimSpace(event.Price) == "" {
+			return
+		}
+
+		a.mexcOrdersCh <- Order{
+			ID:    event.DealsData.OrderId,
+			Price: stringToDecimal(event.Price),
+			Qty:   stringToDecimal(event.Qty),
+		}
+	}
+
+	errHandler := func(err error) {
+		if err != nil {
+			l.Errorf("%v, %dms后重连...", err, reconnectMexcAccountInfoSleepDuration)
+			time.Sleep(time.Duration(reconnectMexcAccountInfoSleepDuration) * time.Millisecond)
+			a.startMexcWsDealsInfoServer()
+		}
+	}
+
+	doneC, stopC, err := mexc.WsDealsInfoServe(mexcListenKey, handler, errHandler)
+	if err != nil {
+		l.Errorf("%v, %dms后重连...", err, reconnectMexcAccountInfoSleepDuration)
+		time.Sleep(time.Duration(reconnectMexcAccountInfoSleepDuration) * time.Millisecond)
+		a.startMexcWsDealsInfoServer()
+	}
+	l.Warn("Succeed")
+
+	_ = doneC
+	_ = stopC
 }
 
 func (a *Account) accountUpdate(accountUpdates binancesdk.WsAccountUpdateList) {

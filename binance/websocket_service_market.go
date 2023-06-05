@@ -3,7 +3,6 @@ package binance
 import (
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 )
 
 type WsApiPingParams struct{}
@@ -90,9 +89,9 @@ func StartKlineInfo(Symbol string, interval string, wsKlineHandler binancesdk.Ws
 		if err == nil {
 			break
 		}
-		logrus.Error(err)
+		Logger.Error(err)
 	}
-	logrus.Debug("Connect to mexc deals info websocket server successfully.")
+	Logger.Debug("Connect to mexc deals info websocket server successfully.")
 
 	return doneC, stopC
 }
