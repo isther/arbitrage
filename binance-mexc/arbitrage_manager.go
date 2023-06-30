@@ -268,13 +268,22 @@ func (b *ArbitrageManager) startCheckBinanceKline() {
 				high, _ := decimal.NewFromString(event.Kline.High)
 				low, _ := decimal.NewFromString(event.Kline.Low)
 
-				if high.Div(low).Sub(decimal.NewFromInt(1)).Mul(klineRatioBase).
-					GreaterThanOrEqual(decimal.NewFromFloat(config.Config.KlineRatio)) {
+				ratio := high.Div(low).Sub(decimal.NewFromInt(1)).Mul(klineRatioBase)
+
+				if ratio.GreaterThanOrEqual(decimal.NewFromFloat(config.Config.MaxKlineRatio)) {
 					if !Paused.Load() {
 						pauseCh <- struct{}{}
 						logrus.Warn("BTC振幅过高，已暂停")
 						time.Sleep(time.Duration(config.Config.KlinePauseDuration) * time.Millisecond)
 						logrus.Warn("BTC振幅过高暂停结束")
+						unPauseCh <- struct{}{}
+					}
+				} else if ratio.LessThanOrEqual(decimal.NewFromFloat(config.Config.MinKlineRatio)) {
+					if !Paused.Load() {
+						pauseCh <- struct{}{}
+						logrus.Warn("BTC振幅过低，已暂停")
+						time.Sleep(time.Duration(config.Config.KlinePauseDuration) * time.Millisecond)
+						logrus.Warn("BTC振幅过低暂停结束")
 						unPauseCh <- struct{}{}
 					}
 				}

@@ -20,7 +20,8 @@ params:
   maxRatio: 2 # base 10000
   profitRatio: 1 # base 10000
   closeTimeOut: 60000 # ms
-  klineRatio: 50.0 # base 10000
+  minKlineRatio: 2.0 # base 10000
+  maxKlineRatio: 50.0 # base 10000
   klinePauseDuration: 30000 # ms
   clientTimeOut: 80 # ms
   clientTimeOutPauseDuration: 5000 # ms

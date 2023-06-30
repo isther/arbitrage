@@ -45,7 +45,8 @@ params:
   maxRatio: 1.5 # base 10000
   profitRatio: 0.1 # base 10000
   closeTimeOut: 1000 # ms
-  klineRatio: 5.0 # base 10000
+  minKlineRatio: 2.0 # base 10000
+  maxKlineRatio: 5.0 # base 10000
   klinePauseDuration: 500 # ms
   clientTimeOut: 500 # ms
   clientTimeOutPauseDuration: 500 # ms
@@ -82,7 +83,8 @@ type Params struct {
 	MaxRatio                   float64 `json:"maxRatio" yaml:"maxRatio"`                                     // base 10000
 	ProfitRatio                float64 `json:"profitRatio" yaml:"profitRatio"`                               // base 10000
 	CloseTimeOut               int64   `json:"closeTimeOut" yaml:"closeTimeOut"`                             // ms
-	KlineRatio                 float64 `json:"klineRatio" yaml:"klineRatio"`                                 // base 10000
+	MinKlineRatio              float64 `json:"minKlineRatio" yaml:"minKlineRatio"`                           // base 10000
+	MaxKlineRatio              float64 `json:"maxKlineRatio" yaml:"maxKlineRatio"`                           // base 10000
 	KlinePauseDuration         int64   `json:"klinePauseDuration" yaml:"klinePauseDuration"`                 // ms
 	ClientTimeOut              int64   `json:"clientTimeOut" yaml:"clientTimeOut"`                           // ms
 	ClientTimeOutPauseDuration int64   `json:"clientTimeOutPauseDuration" yaml:"clientTimeOutPauseDuration"` // ms
