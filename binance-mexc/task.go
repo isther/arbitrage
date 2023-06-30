@@ -8,6 +8,7 @@ import (
 	"time"
 
 	binancesdk "github.com/adshao/go-binance/v2"
+	"github.com/adshao/go-binance/v2/futures"
 	"github.com/isther/arbitrage/config"
 	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
@@ -384,10 +385,16 @@ func (t *Task) tradeMode1(
 	newClientOrderId,
 	binanceQty string,
 ) {
-	t.binanceTrade(
+	// t.binanceTrade(
+	// 	newClientOrderId,
+	// 	"BTCUSDT",
+	// 	binancesdk.SideTypeBuy,
+	// 	binanceQty,
+	// )
+	t.binanceFuturesTrade(
 		newClientOrderId,
 		"BTCUSDT",
-		binancesdk.SideTypeBuy,
+		futures.SideTypeBuy,
 		binanceQty,
 	)
 }
@@ -397,10 +404,16 @@ func (t *Task) tradeMode2(
 	binanceQty string,
 ) {
 
-	t.binanceTrade(
+	// t.binanceTrade(
+	// 	newClientOrderId,
+	// 	"BTCUSDT",
+	// 	binancesdk.SideTypeSell,
+	// 	binanceQty,
+	// )
+	t.binanceFuturesTrade(
 		newClientOrderId,
 		"BTCUSDT",
-		binancesdk.SideTypeSell,
+		futures.SideTypeSell,
 		binanceQty,
 	)
 }
@@ -490,6 +503,19 @@ func (t *Task) binanceTrade(newClientOrderId, symbol string, side binancesdk.Sid
 
 	res, err := binancesdk.NewClient(t.binanceApiKey, t.binanceSecretKey).NewCreateOrderService().
 		Symbol(symbol).Side(side).Type(binancesdk.OrderTypeMarket).
+		Quantity(qty).NewClientOrderID(newClientOrderId).
+		Do(context.Background())
+	if err != nil {
+		logrus.Error(res, err)
+	}
+}
+
+func (t *Task) binanceFuturesTrade(newClientOrderId, symbol string, side futures.SideType, qty string) {
+	quantityDecimal, _ := decimal.NewFromString(qty)
+	quantityDecimal = quantityDecimal.Truncate(5).Truncate(8)
+	qty = quantityDecimal.String()
+	res, err := futures.NewClient(t.binanceApiKey, t.binanceSecretKey).NewCreateOrderService().
+		Symbol(symbol).Side(side).Type(futures.OrderTypeMarket).
 		Quantity(qty).NewClientOrderID(newClientOrderId).
 		Do(context.Background())
 	if err != nil {
