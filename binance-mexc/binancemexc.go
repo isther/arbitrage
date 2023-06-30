@@ -7,10 +7,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-const (
-	qty = "0.0004"
-)
-
 var (
 	Paused                                atomic.Bool
 	pauseCh                                     = make(chan struct{})

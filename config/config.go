@@ -50,6 +50,7 @@ params:
   clientTimeOut: 500 # ms
   clientTimeOutPauseDuration: 500 # ms
   waitDuration: 5000 # ms
+  maxQty: 0.0004
 `
 )
 
@@ -86,6 +87,7 @@ type Params struct {
 	ClientTimeOut              int64   `json:"clientTimeOut" yaml:"clientTimeOut"`                           // ms
 	ClientTimeOutPauseDuration int64   `json:"clientTimeOutPauseDuration" yaml:"clientTimeOutPauseDuration"` // ms
 	WaitDuration               int64   `json:"waitDuration" yaml:"waitDuration"`                             // ms
+	MaxQty                     string  `json:"maxQty" yaml:"maxQty"`
 }
 
 type DingDing struct {

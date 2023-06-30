@@ -1,0 +1,28 @@
+proxy:
+  useProxy: false
+  proxy: "http://localhost:7890"
+api:
+api:
+  binanceApiKey: "1U02dMrDMRFuCsk2355JwaoEJMxG9HoEBGGpnm3PkRC7jX383Z3svPHoMb5wwIhH"
+  binanceSecretKey: "S06CcVJFuWWNcdThIP4YvS8nKiQkDl6xArnTLDJAy0oi6jqSXByIY2KHGzguRvVa"
+  mexcApiKey: "mx0vglCfFpXjmgT9Qh"
+  mexcSecretKey: "69a2f20afcd140968c8abaf827b0483f"
+  mexcCookie: '_ga=GA1.1.482157674.1686455754; _rdt_uuid=1686455753928.bc43f0a3-b687-4de9-a638-688b56cb7a1a; _vid_t=tf2VbIZTeTMEBx9IB+sMLRbVa+3xIszBLTufDeku0kH8s0SUh6kbhVDbgOoT2aMksXrrxRyon1vK/A==; mexc_fingerprint_visitorId=wR3Y1PZLebI1LW4kiNML; _fbp=fb.1.1686455754259.724999006; NEXT_LOCALE=zh-TW; mxc_reset_tradingview_key=true; uc_token=WEB6914ca27c326c6c2417ad1422e05bb75f4cd32d54f8b6b70ae6c54993ebc4758; x-mxc-fingerprint=wR3Y1PZLebI1LW4kiNML; u_id=WEB6914ca27c326c6c2417ad1422e05bb75f4cd32d54f8b6b70ae6c54993ebc4758; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%22251c775205f9449fa3de769ea7e38589%22%2C%22first_id%22%3A%22188a8988bff9ad-066db449e2a47c8-26031d51-3686400-188a8988c01393%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMTg4YTg5ODhiZmY5YWQtMDY2ZGI0NDllMmE0N2M4LTI2MDMxZDUxLTM2ODY0MDAtMTg4YTg5ODhjMDEzOTMiLCIkaWRlbnRpdHlfbG9naW5faWQiOiIyNTFjNzc1MjA1Zjk0NDlmYTNkZTc2OWVhN2UzODU4OSJ9%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%22251c775205f9449fa3de769ea7e38589%22%7D%2C%22%24device_id%22%3A%22188a8988bff9ad-066db449e2a47c8-26031d51-3686400-188a8988c01393%22%7D; RT="z=1&dm=www.mexc.com&si=e4354f50-8ef7-4eb6-b4bc-8716654539db&ss=lisix3rn&sl=3&tt=7oy&bcn=%2F%2F684d0d45.akstat.io%2F&ld=10fq"; _ga_L6XJCQTK75=GS1.1.1686554356.4.1.1686554407.9.0.0'
+logDingDingConfig:
+  accessToken: "3296b41b6accbf9d665b6d6642fa2724eca44edaa50f195ff87191e2507c3c7b"
+  secrect: "SECa56e21da66fc125b7cee996007bc591860ce779aadc6757614c813db5390a068"
+errorDingDingConfig:
+  accessToken: "46c976998dbea027c94f42277b297b36d1941db36913a11d7855141b4667c783"
+  secrect: "SEC688130c0f56e0e1f559da9b021276fbc1654c7f427f9d9c406d6cdd4bd4e4d9f"
+params:
+  number: 99999
+  minRatio: 0.8 # base 10000
+  maxRatio: 2 # base 10000
+  profitRatio: 1 # base 10000
+  closeTimeOut: 60000 # ms
+  klineRatio: 50.0 # base 10000
+  klinePauseDuration: 30000 # ms
+  clientTimeOut: 80 # ms
+  clientTimeOutPauseDuration: 5000 # ms
+  waitDuration: 48000 # ms
+
