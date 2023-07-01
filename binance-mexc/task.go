@@ -512,7 +512,7 @@ func (t *Task) binanceTrade(newClientOrderId, symbol string, side binancesdk.Sid
 
 func (t *Task) binanceFuturesTrade(newClientOrderId, symbol string, side futures.SideType, qty string) {
 	quantityDecimal, _ := decimal.NewFromString(qty)
-	quantityDecimal = quantityDecimal.Truncate(5).Truncate(8)
+	quantityDecimal = quantityDecimal.Truncate(4).Truncate(8)
 	qty = quantityDecimal.String()
 	res, err := futures.NewClient(t.binanceApiKey, t.binanceSecretKey).NewCreateOrderService().
 		Symbol(symbol).Side(side).Type(futures.OrderTypeMarket).
