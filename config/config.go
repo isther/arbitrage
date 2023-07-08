@@ -39,6 +39,13 @@ logDingDingConfig:
 errorDingDingConfig:
   accessToken: ""
   secrect: ""
+mode: 
+  isFutures: true # true: futures, false: spot
+  tradeSymbol: "BTCUSDT" 
+symbolPair:
+  binanceSymbol: "BTCTUSD"
+  stableCoinSymbol: "TUSDUSDT"
+  mexcSymbol: "BTCUSDT"
 params:
   number: 1
   minRatio: 0.7 # base 10000
@@ -59,6 +66,8 @@ params:
 type ServerConfig struct {
 	Proxy               `json:"proxy" yaml:"proxy"`
 	Key                 `json:"api" yaml:"api"`
+	Mode                `json:"mode" yaml:"mode"`
+	SymbolPair          `json:"symbolPair" yaml:"symbolPair"`
 	Params              `json:"params" yaml:"params"`
 	LogDingDingConfig   DingDing `json:"logDingDingConfig" yaml:"logDingDingConfig"`
 	ErrorDingDingConfig DingDing `json:"errorDingDingConfig" yaml:"errorDingDingConfig"`
@@ -90,6 +99,17 @@ type Params struct {
 	ClientTimeOutPauseDuration int64   `json:"clientTimeOutPauseDuration" yaml:"clientTimeOutPauseDuration"` // ms
 	WaitDuration               int64   `json:"waitDuration" yaml:"waitDuration"`                             // ms
 	MaxQty                     string  `json:"maxQty" yaml:"maxQty"`
+}
+
+type Mode struct {
+	IsFutures   bool   `json:"isFutures" yaml:"isFutures"`
+	TradeSymbol string `json:"tradeSymbol" yaml:"tradeSymbol"`
+}
+
+type SymbolPair struct {
+	BinanceSymbol    string `json:"binanceSymbol" yaml:"binanceSymbol"`
+	StableCoinSymbol string `json:"stableCoinSymbol" yaml:"stableCoinSymbol"`
+	MexcSymbol       string `json:"mexcSymbol" yaml:"mexcSymbol"`
 }
 
 type DingDing struct {

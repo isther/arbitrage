@@ -14,9 +14,9 @@ import (
 
 var (
 	symbolPair = binancemexc.SymbolPair{
-		BinanceSymbol:    "BTCTUSD",
-		StableCoinSymbol: "TUSDUSDT",
-		MexcSymbol:       "BTCUSDT",
+		BinanceSymbol:    config.Config.SymbolPair.BinanceSymbol,
+		StableCoinSymbol: config.Config.SymbolPair.StableCoinSymbol,
+		MexcSymbol:       config.Config.SymbolPair.MexcSymbol,
 	}
 
 	arbitrageManager = binancemexc.NewArbitrageManager(symbolPair)

@@ -385,37 +385,42 @@ func (t *Task) tradeMode1(
 	newClientOrderId,
 	binanceQty string,
 ) {
-	// t.binanceTrade(
-	// 	newClientOrderId,
-	// 	"BTCUSDT",
-	// 	binancesdk.SideTypeBuy,
-	// 	binanceQty,
-	// )
-	t.binanceFuturesTrade(
-		newClientOrderId,
-		"BTCUSDT",
-		futures.SideTypeBuy,
-		binanceQty,
-	)
+	if config.Config.Mode.IsFutures {
+		t.binanceFuturesTrade(
+			newClientOrderId,
+			config.Config.Mode.TradeSymbol,
+			futures.SideTypeBuy,
+			binanceQty,
+		)
+	} else {
+		t.binanceTrade(
+			newClientOrderId,
+			config.Config.Mode.TradeSymbol,
+			binancesdk.SideTypeBuy,
+			binanceQty,
+		)
+	}
 }
 
 func (t *Task) tradeMode2(
 	newClientOrderId,
 	binanceQty string,
 ) {
-
-	// t.binanceTrade(
-	// 	newClientOrderId,
-	// 	"BTCUSDT",
-	// 	binancesdk.SideTypeSell,
-	// 	binanceQty,
-	// )
-	t.binanceFuturesTrade(
-		newClientOrderId,
-		"BTCUSDT",
-		futures.SideTypeSell,
-		binanceQty,
-	)
+	if config.Config.Mode.IsFutures {
+		t.binanceFuturesTrade(
+			newClientOrderId,
+			config.Config.Mode.TradeSymbol,
+			futures.SideTypeSell,
+			binanceQty,
+		)
+	} else {
+		t.binanceTrade(
+			newClientOrderId,
+			config.Config.Mode.TradeSymbol,
+			binancesdk.SideTypeSell,
+			binanceQty,
+		)
+	}
 }
 
 func (t *Task) calculateRatioMode1(taPrice, tbPrice, stableSymbolPrice decimal.Decimal) (decimal.Decimal, bool) {
