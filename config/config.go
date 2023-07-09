@@ -47,7 +47,8 @@ symbolPair:
   stableCoinSymbol: "TUSDUSDT"
   mexcSymbol: "BTCUSDT"
 params:
-  number: 1
+  cycleNumber: 1
+  bnbMinQty: 0.1
   minRatio: 0.7 # base 10000
   maxRatio: 1.5 # base 10000
   profitRatio: 0.1 # base 10000
@@ -87,7 +88,8 @@ type Key struct {
 }
 
 type Params struct {
-	Number                     int64   `json:"number" yaml:"number"`
+	CycleNumber                int64   `json:"cycleNumber" yaml:"cycleNumber"`
+	BNBMinQty                  float64 `json:"bnbMinQty" yaml:"bnbMinQty"`
 	MinRatio                   float64 `json:"minRatio" yaml:"minRatio"`                                     // base 10000
 	MaxRatio                   float64 `json:"maxRatio" yaml:"maxRatio"`                                     // base 10000
 	ProfitRatio                float64 `json:"profitRatio" yaml:"profitRatio"`                               // base 10000

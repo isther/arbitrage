@@ -104,9 +104,10 @@ func (t *Task) run(
 func (t *Task) Init() {
 	t.mode.Store(0)
 	number++
-	if config.Config.Number == number {
+	logrus.Warnf("任务进度: %d/%d", number, config.Config.Params.CycleNumber)
+	if config.Config.Params.CycleNumber == number {
 		truelyPause()
-		logrus.Warnf("已完成任务%d次，停止。", number)
+		logrus.Warnf("已完成任务%d次，程序停止。", number)
 	} else {
 		pauseCh <- struct{}{}
 		time.Sleep(time.Duration(config.Config.WaitDuration) * time.Millisecond)

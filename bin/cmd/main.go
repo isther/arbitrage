@@ -12,17 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	symbolPair = binancemexc.SymbolPair{
-		BinanceSymbol:    config.Config.SymbolPair.BinanceSymbol,
-		StableCoinSymbol: config.Config.SymbolPair.StableCoinSymbol,
-		MexcSymbol:       config.Config.SymbolPair.MexcSymbol,
-	}
-
-	arbitrageManager = binancemexc.NewArbitrageManager(symbolPair)
-	account          = binancemexc.NewAccount(symbolPair)
-)
-
 func init() {
 	config.Load("config.yaml")
 
@@ -45,15 +34,27 @@ func init() {
 		TimestampFormat: "2006-01-02 15:04:05.000",
 	})
 
+}
+
+func main() {
+	var (
+		symbolPair = binancemexc.SymbolPair{
+			BinanceSymbol:    config.Config.SymbolPair.BinanceSymbol,
+			StableCoinSymbol: config.Config.SymbolPair.StableCoinSymbol,
+			MexcSymbol:       config.Config.SymbolPair.MexcSymbol,
+		}
+
+		arbitrageManager = binancemexc.NewArbitrageManager(symbolPair)
+		account          = binancemexc.NewAccount(symbolPair)
+	)
+
 	// Start
 	arbitrageManager.Start()
 	// account.Start()
 
 	logrus.Warn("启动中...")
 	time.Sleep(1 * time.Second)
-}
 
-func main() {
 	arbitrageManager.StartTask(
 		binancemexc.NewArbitrageTask(
 			config.Config.BinanceApiKey,

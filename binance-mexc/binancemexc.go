@@ -37,6 +37,7 @@ func truelyPause() {
 		switch Paused.Load() {
 		case true:
 			time.Sleep(10 * time.Millisecond)
+			truelyPause()
 		case false:
 			pauseCh <- struct{}{}
 			return
