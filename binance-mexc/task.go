@@ -105,6 +105,7 @@ func (t *Task) Init() {
 	t.mode.Store(0)
 	number++
 	logrus.Warnf("任务进度: %d/%d", number, config.Config.Params.CycleNumber)
+	checkBNB()
 	if config.Config.Params.CycleNumber == number {
 		truelyPause()
 		logrus.Warnf("已完成任务%d次，程序停止。", number)
@@ -526,5 +527,37 @@ func (t *Task) binanceFuturesTrade(newClientOrderId, symbol string, side futures
 		Do(context.Background())
 	if err != nil {
 		logrus.Error(res, err)
+	}
+}
+
+func checkBNB() {
+	if config.Config.Mode.IsFutures {
+		res, err := newBinanceFuturesClient().NewGetAccountService().Do(context.Background())
+		if err != nil {
+			panic("获取币安合约bnb数量失败: " + err.Error())
+		}
+		for _, v := range res.Assets {
+			if v.Asset == "BNB" {
+				free := stringToDecimal(v.WalletBalance)
+				logrus.Infof("币安合约bnb数量: %s", free.String())
+				if free.LessThan(decimal.NewFromFloat(config.Config.Params.BNBMinQty)) {
+					panic("币安合约bnb数量不足")
+				}
+			}
+		}
+	} else {
+		res, err := newBinanceClient().NewGetAccountService().Do(context.Background())
+		if err != nil {
+			panic("获取币安现货bnb数量失败: " + err.Error())
+		}
+		for _, v := range res.Balances {
+			if v.Asset == "BNB" {
+				free := stringToDecimal(v.Free)
+				logrus.Infof("币安现货bnb数量: %s", free.String())
+				if free.LessThan(decimal.NewFromFloat(config.Config.Params.BNBMinQty)) {
+					panic("币安现货bnb数量不足")
+				}
+			}
+		}
 	}
 }

@@ -10,7 +10,6 @@ import (
 
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/isther/arbitrage/binance"
-	"github.com/isther/arbitrage/config"
 	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -65,14 +64,6 @@ func NewAccount(symbolPair SymbolPair) *Account {
 }
 
 func (a *Account) Start() {
-	// check bnb
-	go func() {
-		for {
-			a.checkBNB()
-			time.Sleep(1 * time.Minute)
-		}
-	}()
-
 	go func() {
 		for {
 			orderIDs := <-a.OrderIDsCh
@@ -401,34 +392,4 @@ func stringToDecimal(s string) decimal.Decimal {
 		panic(err)
 	}
 	return d
-}
-
-func (a *Account) checkBNB() {
-	if config.Config.Mode.IsFutures {
-		res, err := newBinanceFuturesClient().NewGetAccountService().Do(context.Background())
-		if err != nil {
-			panic("获取币安合约bnb数量失败: " + err.Error())
-		}
-		for _, v := range res.Assets {
-			if v.Asset == "BNB" {
-				free := stringToDecimal(v.WalletBalance)
-				if free.LessThan(decimal.NewFromFloat(config.Config.Params.BNBMinQty)) {
-					panic("币安合约bnb数量不足")
-				}
-			}
-		}
-	} else {
-		res, err := newBinanceClient().NewGetAccountService().Do(context.Background())
-		if err != nil {
-			panic("获取币安现货bnb数量失败: " + err.Error())
-		}
-		for _, v := range res.Balances {
-			if v.Asset == "BNB" {
-				free := stringToDecimal(v.Free)
-				if free.LessThan(decimal.NewFromFloat(config.Config.Params.BNBMinQty)) {
-					panic("币安现货bnb数量不足")
-				}
-			}
-		}
-	}
 }

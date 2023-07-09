@@ -2,7 +2,6 @@ package binancemexc
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -25,7 +24,7 @@ type ArbitrageManager struct {
 	symbolPairs SymbolPair
 
 	// websocket server
-	websocketApiServiceManager *binance.WebsocketServiceManager
+	// websocketApiServiceManager *binance.WebsocketServiceManager
 
 	binanceSymbolEventCh    chan *binancesdk.WsBookTickerEvent
 	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent
@@ -44,7 +43,7 @@ func NewArbitrageManager(symbolPairs SymbolPair) *ArbitrageManager {
 		symbolPairs:          symbolPairs,
 		binanceSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
 
-		websocketApiServiceManager: binance.NewWebsocketServiceManager(),
+		// websocketApiServiceManager: binance.NewWebsocketServiceManager(),
 
 		stableCoinSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
 		mexcSymbolEventCh:       make(chan *mexc.WsBookTickerEvent),
@@ -130,68 +129,69 @@ func (b *ArbitrageManager) Start() {
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		// Send request to get server time
-		go func() {
-			for {
-				b.websocketApiServiceManager.Send(binance.NewServerTime())
-				time.Sleep(1 * time.Second)
-			}
-		}()
-
-		for {
-			_, _ = b.websocketApiServiceManager.StartWsApi(
-				func(msg []byte) {
-					wsApiEvent, method, err := b.websocketApiServiceManager.ParseWsApiEvent(msg)
-					if err != nil {
-						logrus.Error("Failed to parse wsApiEvent:", err)
-						return
-					}
-
-					switch method {
-					case binance.OrderTrade:
-						if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "C") ||
-							strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "FC") {
-						} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
-							// logrus.Info(wsApiEvent.RateLimits)
-						}
-						logrus.Info("tradeInfo", wsApiEvent.OrderTradeResponse)
-					case binance.ServerTime:
-						if decimal.NewFromInt(time.Now().UnixMilli() - wsApiEvent.ServerTime.ServerTime).
-							GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
-							if !Paused.Load() {
-								pauseCh <- struct{}{}
-								logrus.Warn("币安超时，已暂停")
-								time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
-								logrus.Warn("币安超时暂停结束")
-								unPauseCh <- struct{}{}
-							}
-						}
-						// default:
-						// logrus.Warn(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
-					}
-				},
-				func(err error) {
-					logrus.Error("BinanceWsApiServiceManager: ", err)
-					binanceWsServiceRestartCh <- struct{}{}
-					// panic(err)
-				},
-			)
-			if !started.Load() {
-				wg.Done()
-			}
-
-			<-binanceWsServiceRestartCh
-			logrus.Debug("BinanceWsApiServiceManager: Restart")
-		}
-	}()
+	// wg.Add(1)
+	// go func() {
+	// 	// Send request to get server time
+	// 	go func() {
+	// 		for {
+	// 			b.websocketApiServiceManager.Send(binance.NewServerTime())
+	// 			time.Sleep(1 * time.Second)
+	// 		}
+	// 	}()
+	//
+	// 	for {
+	// 		_, _ = b.websocketApiServiceManager.StartWsApi(
+	// 			func(msg []byte) {
+	// 				wsApiEvent, method, err := b.websocketApiServiceManager.ParseWsApiEvent(msg)
+	// 				if err != nil {
+	// 					logrus.Error("Failed to parse wsApiEvent:", err)
+	// 					return
+	// 				}
+	//
+	// 				switch method {
+	// 				case binance.OrderTrade:
+	// 					if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "C") ||
+	// 						strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "FC") {
+	// 					} else if strings.HasPrefix(wsApiEvent.OrderTradeResponse.ClientOrderID, "O") {
+	// 						// logrus.Info(wsApiEvent.RateLimits)
+	// 					}
+	// 					logrus.Info("tradeInfo", wsApiEvent.OrderTradeResponse)
+	// 				case binance.ServerTime:
+	// 					if decimal.NewFromInt(time.Now().UnixMilli() - wsApiEvent.ServerTime.ServerTime).
+	// 						GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
+	// 						if !Paused.Load() {
+	// 							pauseCh <- struct{}{}
+	// 							logrus.Warn("币安超时，已暂停")
+	// 							time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
+	// 							logrus.Warn("币安超时暂停结束")
+	// 							unPauseCh <- struct{}{}
+	// 						}
+	// 					}
+	// 					// default:
+	// 					// logrus.Warn(fmt.Sprintf("[%s]: %+v", method, wsApiEvent))
+	// 				}
+	// 			},
+	// 			func(err error) {
+	// 				logrus.Error("BinanceWsApiServiceManager: ", err)
+	// 				binanceWsServiceRestartCh <- struct{}{}
+	// 				// panic(err)
+	// 			},
+	// 		)
+	// 		if !started.Load() {
+	// 			wg.Done()
+	// 		}
+	//
+	// 		<-binanceWsServiceRestartCh
+	// 		logrus.Debug("BinanceWsApiServiceManager: Restart")
+	// 	}
+	// }()
 
 	wg.Wait()
 	started.Store(true)
 
 	go b.startCheckBinanceKline()
 	go b.startCheckMexcServerTime()
+	go b.startCheckBinanceServerTime()
 }
 
 func (b *ArbitrageManager) StartTask(task *Task, OrderIDsCh chan OrderIds) {
@@ -304,7 +304,7 @@ func (b *ArbitrageManager) startCheckMexcServerTime() {
 	for {
 		serverTime, err := newMexcClient().NewServerTimeService().Do(context.Background())
 		if err != nil {
-			logrus.Error("Failed to get server time:", err)
+			mexc.Logger.Error("Failed to get server time:", err)
 			continue
 		}
 		if decimal.NewFromInt(time.Now().UnixMilli() - serverTime).
@@ -314,6 +314,28 @@ func (b *ArbitrageManager) startCheckMexcServerTime() {
 				logrus.Warn("抹茶超时，已暂停")
 				time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
 				logrus.Warn("抹茶超时暂停结束")
+				unPauseCh <- struct{}{}
+			}
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func (b *ArbitrageManager) startCheckBinanceServerTime() {
+	for {
+		serverTime, err := newBinanceClient().NewServerTimeService().Do(context.Background())
+		if err != nil {
+			binance.Logger.Error("Failed to get server time:", err)
+			continue
+		}
+
+		if decimal.NewFromInt(time.Now().UnixMilli() - serverTime).
+			GreaterThanOrEqual(decimal.NewFromInt(config.Config.ClientTimeOut)) {
+			if !Paused.Load() {
+				pauseCh <- struct{}{}
+				logrus.Warn("币安超时，已暂停")
+				time.Sleep(time.Duration(config.Config.ClientTimeOutPauseDuration) * time.Millisecond)
+				logrus.Warn("币安超时暂停结束")
 				unPauseCh <- struct{}{}
 			}
 		}
