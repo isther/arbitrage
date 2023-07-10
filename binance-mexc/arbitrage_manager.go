@@ -29,7 +29,8 @@ type ArbitrageManager struct {
 	binanceSymbolEventCh    chan *binancesdk.WsBookTickerEvent
 	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent
 
-	mexcSymbolEventCh chan *mexc.WsBookTickerEvent
+	// mexcSymbolEventCh chan *mexc.WsBookTickerEvent
+	mexcSymbolEventCh chan *binancesdk.WsBookTickerEvent
 }
 
 type SymbolPair struct {
@@ -46,7 +47,8 @@ func NewArbitrageManager(symbolPairs SymbolPair) *ArbitrageManager {
 		// websocketApiServiceManager: binance.NewWebsocketServiceManager(),
 
 		stableCoinSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
-		mexcSymbolEventCh:       make(chan *mexc.WsBookTickerEvent),
+		// mexcSymbolEventCh:       make(chan *mexc.WsBookTickerEvent),
+		mexcSymbolEventCh: make(chan *binancesdk.WsBookTickerEvent),
 	}
 
 	return &b
@@ -77,6 +79,8 @@ func (b *ArbitrageManager) Start() {
 						b.binanceSymbolEventCh <- event
 					case b.symbolPairs.StableCoinSymbol:
 						b.stableCoinSymbolEventCh <- event
+					case b.symbolPairs.MexcSymbol:
+						b.mexcSymbolEventCh <- event
 					}
 				},
 				func(err error) {
@@ -100,34 +104,34 @@ func (b *ArbitrageManager) Start() {
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		restartCh := make(chan struct{})
-		for {
-			doneC, _ := b.startMexcBookTickerWebsocket(
-				func(event *mexc.WsBookTickerEvent) {
-					b.mexcSymbolEventCh <- event
-				},
-				func(err error) {
-					logrus.Error("MexcBookTicker: ", err)
-					restartCh <- struct{}{}
-					// panic(err)
-				},
-			)
-			logrus.Debug("[BookTicker] Start mexc websocket")
-
-			if !started.Load() {
-				wg.Done()
-			}
-
-			select {
-			case <-restartCh:
-				logrus.Debug("[BookTicker] Restart mexc bookticker websocket")
-			case <-doneC:
-				logrus.Debug("[BookTicker] Done")
-			}
-		}
-	}()
+	// wg.Add(1)
+	// go func() {
+	// 	restartCh := make(chan struct{})
+	// 	for {
+	// 		doneC, _ := b.startMexcBookTickerWebsocket(
+	// 			func(event *mexc.WsBookTickerEvent) {
+	// 				b.mexcSymbolEventCh <- event
+	// 			},
+	// 			func(err error) {
+	// 				logrus.Error("MexcBookTicker: ", err)
+	// 				restartCh <- struct{}{}
+	// 				// panic(err)
+	// 			},
+	// 		)
+	// 		logrus.Debug("[BookTicker] Start mexc websocket")
+	//
+	// 		if !started.Load() {
+	// 			wg.Done()
+	// 		}
+	//
+	// 		select {
+	// 		case <-restartCh:
+	// 			logrus.Debug("[BookTicker] Restart mexc bookticker websocket")
+	// 		case <-doneC:
+	// 			logrus.Debug("[BookTicker] Done")
+	// 		}
+	// 	}
+	// }()
 
 	// wg.Add(1)
 	// go func() {
@@ -190,7 +194,7 @@ func (b *ArbitrageManager) Start() {
 	started.Store(true)
 
 	go b.startCheckBinanceKline()
-	go b.startCheckMexcServerTime()
+	// go b.startCheckMexcServerTime()
 	go b.startCheckBinanceServerTime()
 }
 
@@ -216,7 +220,7 @@ func (b *ArbitrageManager) startBinanceBookTickerWebsocket(
 	)
 	for {
 		doneC, stopC, err = binancesdk.WsCombinedBookTickerServe(
-			[]string{b.symbolPairs.BinanceSymbol, b.symbolPairs.StableCoinSymbol},
+			[]string{b.symbolPairs.BinanceSymbol, b.symbolPairs.StableCoinSymbol, b.symbolPairs.MexcSymbol},
 			handler,
 			errHandler,
 		)

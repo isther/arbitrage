@@ -10,7 +10,6 @@ import (
 	binancesdk "github.com/adshao/go-binance/v2"
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/isther/arbitrage/config"
-	"github.com/isther/arbitrage/mexc"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
@@ -26,7 +25,8 @@ type Task struct {
 
 	binanceSymbolEvent    *binancesdk.WsBookTickerEvent
 	stableCoinSymbolEvent *binancesdk.WsBookTickerEvent
-	mexcSymbolEvent       *mexc.WsBookTickerEvent
+	// mexcSymbolEvent       *mexc.WsBookTickerEvent
+	mexcSymbolEvent *binancesdk.WsBookTickerEvent
 
 	closeRatio       decimal.Decimal
 	openStablePrice  decimal.Decimal
@@ -67,7 +67,7 @@ func NewArbitrageTask(
 func (t *Task) run(
 	binanceSymbolEventCh chan *binancesdk.WsBookTickerEvent,
 	stableCoinSymbolEventCh chan *binancesdk.WsBookTickerEvent,
-	mexcSymbolEventCh chan *mexc.WsBookTickerEvent,
+	mexcSymbolEventCh chan *binancesdk.WsBookTickerEvent,
 	OrderIDsCh chan OrderIds,
 ) {
 	// Init
@@ -109,6 +109,7 @@ func (t *Task) Init() {
 	if config.Config.Params.CycleNumber == number {
 		truelyPause()
 		logrus.Warnf("已完成任务%d次，程序停止。", number)
+		panic("完成任务,程序停止")
 	} else {
 		pauseCh <- struct{}{}
 		time.Sleep(time.Duration(config.Config.WaitDuration) * time.Millisecond)
@@ -128,7 +129,7 @@ func (t *Task) trade(
 			logrus.Debug("Get nil event")
 			continue
 		}
-		if t.mexcSymbolEvent.Data.AskPrice == "" {
+		if t.mexcSymbolEvent.BestAskPrice == "" {
 			logrus.Debug("Get null mexc event")
 			continue
 		}
@@ -197,7 +198,8 @@ func (t *Task) open() (bool, decimal.Decimal, decimal.Decimal, decimal.Decimal, 
 func (t *Task) openMode1() (bool, decimal.Decimal, decimal.Decimal, decimal.Decimal, decimal.Decimal, string) {
 	// Prepare price
 	stableSymbolBidPrice, _ := decimal.NewFromString(t.stableCoinSymbolEvent.BestBidPrice)
-	mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
+	// mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
+	mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.BestAskPrice)
 	binanceSymbolBidPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestBidPrice)
 
 	ratioMode1, ok := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, stableSymbolBidPrice)
@@ -239,7 +241,8 @@ func (t *Task) openMode2() (bool, decimal.Decimal, decimal.Decimal, decimal.Deci
 	// Prepare price
 	stableSymbolAskPrice, _ := decimal.NewFromString(t.stableCoinSymbolEvent.BestAskPrice)
 	binanceSymbolAskPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestAskPrice)
-	mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+	// mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+	mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.BestBidPrice)
 
 	ratioMode2, ok := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, stableSymbolAskPrice)
 	if !ok {
@@ -289,7 +292,8 @@ func (t *Task) close(
 				// 做模式2
 				ratio := decimal.NewFromFloat(-0.0001).Sub(t.closeRatio).Add(t.profitRatio)
 				binanceSymbolAskPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestAskPrice)
-				mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+				// mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+				mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.BestBidPrice)
 				ratioMode2, ok := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice)
 				if !ok {
 					continue
@@ -310,7 +314,8 @@ func (t *Task) close(
 			case 2:
 				// 做模式1
 				ratio := decimal.NewFromFloat(-0.0001).Sub(t.closeRatio).Add(t.profitRatio)
-				mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
+				// mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
+				mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.BestAskPrice)
 				binanceSymbolBidPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestBidPrice)
 				ratioMode1, ok := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice)
 				if !ok {
@@ -340,7 +345,8 @@ func (t *Task) foreceClose() (binanceOrderID string) {
 	case 1:
 		// Get Price
 		binanceSymbolAskPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestAskPrice)
-		mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+		// mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+		mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.BestBidPrice)
 
 		// Log
 		ratio, _ := t.calculateRatioMode2(binanceSymbolAskPrice, mexcSymbolBidPrice, t.openStablePrice)
@@ -361,7 +367,8 @@ func (t *Task) foreceClose() (binanceOrderID string) {
 	case 2:
 		// Get Price
 		binanceSymbolBidPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestAskPrice)
-		mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+		// mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
+		mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.BestBidPrice)
 
 		// Log
 		ratio, _ := t.calculateRatioMode1(binanceSymbolBidPrice, mexcSymbolAskPrice, t.openStablePrice)

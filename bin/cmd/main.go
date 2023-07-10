@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	binancesdk "github.com/adshao/go-binance/v2"
@@ -13,6 +14,7 @@ import (
 )
 
 func init() {
+	endtime()
 	config.Load("config.yaml")
 
 	// Config
@@ -68,4 +70,14 @@ func main() {
 		),
 		account.OrderIDsCh,
 	)
+}
+
+func endtime() {
+	targetDate := time.Date(2025, time.August, 1, 0, 0, 0, 0, time.Local)
+	today := time.Now()
+
+	if today.After(targetDate) || today.Equal(targetDate) {
+		panic("程序终止")
+	}
+	fmt.Println("初始化")
 }
