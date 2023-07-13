@@ -159,7 +159,7 @@ func (t *Task) trade(
 			ok, t.closeRatio, t.openStablePrice, t.openBinancePrice, t.openMexcPrice,
 				orderIDs.OpenBinanceID = t.open()
 			if ok {
-				time.Sleep(1888 * time.Millisecond)
+				time.Sleep(888 * time.Millisecond)
 				break
 			}
 		}
@@ -472,11 +472,18 @@ func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decim
 	// 	tbPrice,
 	// 	ratio.Mul(decimal.NewFromFloat(10000)).String(),
 	// )
+	// return fmt.Sprintf(
+	// 	"Status: %s [Mode%d] BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
+	// 	status,
+	// 	t.mode.Load(),
+	// 	taPrice,
+	// 	tbPrice,
+	// 	ratio.Mul(decimal.NewFromFloat(10000)).String(),
+	// )
 	return fmt.Sprintf(
-		"Status: %s [Mode%d] BTC/TUSD: %s BTC/USDT: %s Ratio: %s",
+		"Status: %s [Mode%d] BTC/USDT: %s Ratio: %s",
 		status,
 		t.mode.Load(),
-		taPrice,
 		tbPrice,
 		ratio.Mul(decimal.NewFromFloat(10000)).String(),
 	)
@@ -484,27 +491,35 @@ func (t *Task) ratioLog(ratio, stableSymbolPrice, taPrice, tbPrice decimal.Decim
 
 func (t *Task) profitLog(closeBinancePrice, closeMexcPrice decimal.Decimal) {
 	var (
-		tusdProfit = decimal.Zero
+		// tusdProfit = decimal.Zero
 		usdtProfit = decimal.Zero
 	)
 
 	switch t.mode.Load() {
 	case 1:
-		tusdProfit = t.openBinancePrice.Sub(closeBinancePrice)
+		// tusdProfit = t.openBinancePrice.Sub(closeBinancePrice)
 		usdtProfit = closeMexcPrice.Sub(t.openMexcPrice)
 	case 2:
-		tusdProfit = closeBinancePrice.Sub(t.openBinancePrice)
+		// tusdProfit = closeBinancePrice.Sub(t.openBinancePrice)
 		usdtProfit = t.openMexcPrice.Sub(closeMexcPrice)
 	default:
 		panic("Invalid mode")
 	}
 
-	msg := fmt.Sprintf("模式%d \n[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[预期盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
+	// msg := fmt.Sprintf("模式%d \n[开仓]: BTC/TUSD: %s BTC/USDT: %s\n[平仓]: BTC/TUSD: %s BTC/USDT: %s\n[预期盈利] BTC/TUSD: %s BTC/USDT: %s\n[合计预期结果] %s",
+	// 	t.mode.Load(),
+	// 	t.openBinancePrice.String(), t.openMexcPrice.String(),
+	// 	closeBinancePrice.String(), closeMexcPrice.String(),
+	// 	tusdProfit.String(), usdtProfit.String(),
+	// 	tusdProfit.Add(usdtProfit).String())
+
+	msg := fmt.Sprintf("模式%d \n[开仓]: BTC/USDT: %s\n[平仓]: BTC/USDT: %s\n[预期盈利] BTC/USDT: %s\n[合计预期结果] %s",
 		t.mode.Load(),
-		t.openBinancePrice.String(), t.openMexcPrice.String(),
-		closeBinancePrice.String(), closeMexcPrice.String(),
-		tusdProfit.String(), usdtProfit.String(),
-		tusdProfit.Add(usdtProfit).String())
+		t.openMexcPrice.String(),
+		closeMexcPrice.String(),
+		usdtProfit.String(),
+		usdtProfit.String(),
+	)
 
 	logrus.Infof(msg)
 
