@@ -290,7 +290,8 @@ func (t *Task) close(
 			switch t.mode.Load() {
 			case 1:
 				// 做模式2
-				ratio := decimal.NewFromFloat(-0.0001).Sub(t.closeRatio).Add(t.profitRatio)
+				ratio := decimal.NewFromFloat(-0.0001).Sub(t.closeRatio).Mul(t.profitRatio)
+				logrus.Warn("close ratio:", ratio)
 				binanceSymbolAskPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestAskPrice)
 				// mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.BidPrice)
 				mexcSymbolBidPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.BestBidPrice)
@@ -313,7 +314,8 @@ func (t *Task) close(
 				}
 			case 2:
 				// 做模式1
-				ratio := decimal.NewFromFloat(-0.0001).Sub(t.closeRatio).Add(t.profitRatio)
+				ratio := decimal.NewFromFloat(-0.0001).Sub(t.closeRatio).Mul(t.profitRatio)
+				logrus.Warn("close ratio:", ratio)
 				// mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.Data.AskPrice)
 				mexcSymbolAskPrice, _ := decimal.NewFromString(t.mexcSymbolEvent.BestAskPrice)
 				binanceSymbolBidPrice, _ := decimal.NewFromString(t.binanceSymbolEvent.BestBidPrice)
